@@ -1,0 +1,85 @@
+.main-container {
+  display: flex;
+  height: 100vh;
+}
+
+/* 사이드바 기본 스타일 */
+.sidebar {
+  transition: width 0.3s ease;
+  background-color: #fff;
+  border-right: 1px solid #ddd;
+  padding: 20px 10px;
+  overflow: hidden;
+}
+
+/* 확장 상태 */
+.sidebar.expanded {
+  width: 200px;
+}
+
+/* 축소 상태 */
+.sidebar.collapsed {
+  width: 60px;
+}
+
+/* 공통 요소 */
+.sidebar .logo {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 30px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+
+.sidebar li {
+  display: flex;
+  align-items: center;
+  padding: 12px 10px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border-radius: 10px;
+}
+
+.sidebar li:hover {
+  background-color: #f2f2f2;
+}
+
+.icon {
+  font-size: 20px;
+  margin-right: 10px;
+}
+
+.text {
+  font-size: 16px;
+}
+
+/* 본문 영역 */
+.content {
+  flex-grow: 1;
+  padding: 30px;
+  position: relative;
+}
+
+/* 검색창 */
+.search-panel {
+  position: absolute;
+  top: 20px;
+  left: 220px;
+  transition: all 0.3s ease;
+  background: #fff;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.search-panel input {
+  padding: 8px 14px;
+  font-size: 14px;
+  width: 200px;
+}
