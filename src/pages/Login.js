@@ -10,12 +10,12 @@ function Login() {
 
     const handleLogin = (e) => {
         e.preventDefault();
-        fetch("http://localhost:3005/login", {
+        fetch("http://localhost:3005/member/login", {
             method: "POST",
             headers: {
                 "Content-type": "application/json"
             },
-            body: JSON.stringify({ userId, pwd: password })
+            body: JSON.stringify({ userId, password })
         })
             .then(res => res.json())
             .then(data => {

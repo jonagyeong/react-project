@@ -1,4 +1,4 @@
-function Dm () {
+function DmPage () {
     return (
         <div>
 
@@ -6,4 +6,4 @@ function Dm () {
     );
 }
 
-export default Dm
+export default DmPage
