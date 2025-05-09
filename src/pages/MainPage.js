@@ -12,6 +12,10 @@ import CreateIcon from '@mui/icons-material/Create';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import { jwtDecode } from 'jwt-decode';
 import { useNavigate } from "react-router-dom";
+import FriendRecommendations from "../components/FriendRecommendations"; // 경로 맞게 수정
+
+
+
 
 function MainPage() {
     const [searchOpen, setSearchOpen] = useState(false);
@@ -43,8 +47,12 @@ function MainPage() {
         { icon: <SearchIcon />, label: "검색", onClick: () => setSearchOpen(!searchOpen) },
         { icon: <NotificationsIcon />, label: "알림", onClick: null },
         { icon: <MessageIcon />, label: "메세지", onClick: null },
-        { icon: <CreateIcon />, label: "글쓰기", onClick: null },
-        { icon: <AccountCircleIcon />, label: "프로필", onClick: null },
+        { icon: <CreateIcon />, label: "글쓰기", onClick: () => {
+            navigate('/feedinsert')
+        }},
+        { icon: <AccountCircleIcon />, label: "프로필",  onClick: () => {
+            navigate('/mypage')
+        } },
         { icon: <MoreHorizIcon />, label: "더보기", onClick: null },
     ];
 
@@ -101,6 +109,9 @@ function MainPage() {
                         </Button>
                     </Box>
                 )}
+
+                {/* 오른쪽 중간 추천 친구 */}
+                {user && <FriendRecommendations user={user} />}
 
                 <Typography variant="h5">메인 피드 영역입니다</Typography>
 

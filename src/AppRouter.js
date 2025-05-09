@@ -7,6 +7,9 @@ import MyPage from './pages/MyPage';
 import SettingPage from './pages/SettingPage';
 import DmPage from './pages/DmPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import FeedInsertPage from './pages/FeedInsertPage';
+
+
 
 function AppRouter() {
   return (
@@ -19,6 +22,7 @@ function AppRouter() {
         <Route path="/settingpage" element={<SettingPage />} />
         <Route path="/dmpage" element={<DmPage />} />
         <Route path="/resetpasssword" element={<ResetPasswordPage />} />
+        <Route path="/feedinsert" element={<FeedInsertPage />} />
       </Routes>
     </Router>
   );
