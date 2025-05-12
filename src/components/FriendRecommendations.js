@@ -52,7 +52,18 @@ function FriendRecommendations({ user }) {
 
 
     return (
-        <Box mt={5} width="300px">
+        <Box mt={5} sx={{
+            position: "absolute",   // 화면에 고정
+            top: "10px",            // 상단에서 조금 내려서 배치
+            right: "10px",          // 오른쪽 끝에 배치
+            display: "flex",
+            flexDirection: "column", // 세로로 배치
+            alignItems: "flex-end",   // 오른쪽 정렬
+            zIndex: 1301,            // 다른 콘텐츠보다 위에 표시
+            backgroundColor: "white", // 흰색 배경 추가
+            padding: "16px",          // 배경과 내용 사이에 여백 추가
+            borderRadius: "8px",      // 모서리를 둥글게
+        }}>
             <Typography variant="body2" fontWeight="bold" color="text.secondary" mb={2}>
                 회원님을 위한 추천
             </Typography>

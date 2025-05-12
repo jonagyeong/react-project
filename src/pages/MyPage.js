@@ -1,78 +1,38 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Avatar, Typography, Button, Grid, Paper } from '@mui/material';
+import {
+    Box, Avatar, Typography, Button, Grid, Paper, Dialog,
+    DialogActions, DialogContent, DialogTitle, IconButton, TextField
+} from '@mui/material';
 import { jwtDecode } from 'jwt-decode';
-import { makeStyles } from '@mui/styles';
+import { useNavigate } from "react-router-dom";
+import HomeIcon from '@mui/icons-material/Home';
+import SearchIcon from '@mui/icons-material/Search';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import MessageIcon from '@mui/icons-material/Message';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import CreateIcon from '@mui/icons-material/Create';
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+import CloseIcon from '@mui/icons-material/Close';
+import { Carousel } from 'react-responsive-carousel';
+import 'react-responsive-carousel/lib/styles/carousel.min.css';
 
-const useStyles = makeStyles((theme) => ({
-    root: {
-        backgroundColor: '#fafafa', // 배경색을 인스타 스타일에 맞게 설정
-        padding: '20px',
-        minHeight: '100vh',
-        maxWidth: '1100px',
-        margin: '0 auto', // 중앙 정렬
-    },
-    profileHeader: {
-        display: 'flex',
-        alignItems: 'center',
-        marginBottom: '20px',
-        backgroundColor: '#fff',
-        padding: '20px',
-        borderRadius: '8px',
-        boxShadow: '0 1px 5px rgba(0,0,0,0.1)', // 인스타 스타일의 그림자 효과
-    },
-    profileImage: {
-        width: 150, // 프로필 이미지 크기
-        height: 150,
-        borderRadius: '50%',
-        marginRight: '20px',
-    },
-    userInfo: {
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-    },
-    followStats: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        marginTop: '10px',
-        width: '200px',
-    },
-    postGrid: {
-        marginTop: '20px',
-    },
-    post: {
-        width: '100%',
-        height: 250,
-        backgroundColor: '#e4e4e4', // 게시물 배경색
-        borderRadius: '8px',
-        marginBottom: '20px',
-        overflow: 'hidden',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)', // 그림자 효과
-    },
-    listItem: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        padding: '10px',
-        backgroundColor: '#fff',
-        borderRadius: '8px',
-        boxShadow: '0 1px 5px rgba(0, 0, 0, 0.1)', // 팔로우/팔로워 카드 그림자
-        marginBottom: '10px',
-    },
-    button: {
-        marginTop: '10px',
-    },
-    postImage: {
-        width: '100%',
-        height: '100%',
-        objectFit: 'cover',
-    },
-}));
+import SideNavigation from "../components/SideNavigation";
+
 
 function MyPage() {
     const [followers, setFollowers] = useState([]);
     const [following, setFollowing] = useState([]);
+    const [searchOpen, setSearchOpen] = useState(false);
+    const [user, setUser] = useState([]);
+    const [feeds, setFeeds] = useState([]);
+    const [ImgList, setImgList] = useState([]);
+    const [openDetail, setOpenDetail] = useState(false);
+    const [selectedFeed, setSelectedFeed] = useState(null);
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [editedContent, setEditedContent] = useState("");
+
     const my = jwtDecode(localStorage.getItem("token"));
-    const classes = useStyles();
+    const navigate = useNavigate();
 
     useEffect(() => {
         fetch("http://localhost:3005/profile/followers/" + my.userId)
@@ -82,92 +42,187 @@ function MyPage() {
         fetch("http://localhost:3005/profile/following/" + my.userId)
             .then(res => res.json())
             .then(data => setFollowing(data));
+
+        fetch("http://localhost:3005/profile/" + my.userId)
+            .then(res => res.json())
+            .then(data => {
+                setUser(data.info);
+                setFeeds(data.FeedList);  // 서버에서 피드 리스트 받기
+                console.log("피드 리스트:", data.FeedList);  // 디버깅: 피드 리스트 확인
+            });
     }, [my.userId]);
 
+    useEffect(() => {
+        if (selectedFeed) {
+            console.log("선택된 피드:", selectedFeed);  // 디버깅: 선택된 피드 확인
+            fetch("http://localhost:3005/feed/images/" + selectedFeed.FEEDNO)
+                .then(res => res.json())
+                .then(data => {
+                    setImgList(data.ImgList);
+                    console.log("이미지 리스트:", data.ImgList);  // 디버깅: 이미지 리스트 확인
+                });
+        }
+    }, [selectedFeed]);
+
+    const handleOpenDetail = (feed) => {
+        console.log("피드 클릭됨:", feed);  // 디버깅: 클릭된 피드 확인
+        setSelectedFeed(feed);  // 클릭한 피드를 selectedFeed로 설정
+        setEditedContent(feed.content);  // 초기 값으로 피드 내용 설정
+        setOpenDetail(true);  // 상세 보기 창 열기
+    };
+
+    const handleCloseDetail = () => {
+        setOpenDetail(false);
+        setSelectedFeed(null);
+        setIsEditMode(false);
+    };
+
+    const handleDeleteFeed = (feedNo) => {
+        if (window.confirm("정말로 이 게시글을 삭제하시겠습니까?")) {
+            fetch("http://localhost:3005/feed/" + feedNo, {
+                method: "DELETE"
+            })
+                .then(response => {
+                    if (response.ok) {
+                        setFeeds(prev => prev.filter(feed => feed.FEEDNO !== feedNo));
+                        handleCloseDetail();
+                    } else {
+                        alert("삭제에 실패했습니다.");
+                    }
+                })
+                .catch(err => {
+                    console.error("삭제 에러:", err);
+                });
+        }
+    };
+
+    const handleEditFeed = () => {
+        fetch("http://localhost:3005/feed/" + selectedFeed.FEEDNO, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ content: editedContent })
+        })
+            .then(response => {
+                if (response.ok) {
+                    const updatedFeed = { ...selectedFeed, content: editedContent };
+                    setFeeds(prev => prev.map(feed => feed.FEEDNO === updatedFeed.FEEDNO ? updatedFeed : feed));
+                    setSelectedFeed(updatedFeed);
+                    setIsEditMode(false);
+                } else {
+                    alert("수정에 실패했습니다.");
+                }
+            })
+            .catch(err => {
+                console.error("수정 에러:", err);
+            });
+    };
+
+    
 
     return (
-        <div className={classes.root}>
+        <Box sx={{ display: 'flex' }}>
+            <SideNavigation />
 
-            {/* 프로필 헤더 */}
-            <Box className={classes.profileHeader}>
-                <Avatar
-                    src="https://via.placeholder.com/150"
-                    className={classes.profileImage}
-                />
-                <Box className={classes.userInfo}>
-                    <Typography variant="h5" fontWeight="bold">
-                        {my.userId}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                        {my.userName}
-                    </Typography>
-                    <Box className={classes.followStats}>
-                        <Typography variant="body2">
-                            <strong>{followers.length}</strong> 팔로워
-                        </Typography>
-                        <Typography variant="body2">
-                            <strong>{following.length}</strong> 팔로우
-                        </Typography>
+            <Box sx={{ marginLeft: '200px', padding: '20px', width: '100%' }}>
+                <Box sx={{
+                    display: 'flex', alignItems: 'center',
+                    marginBottom: '20px', backgroundColor: '#fff',
+                    padding: '20px', borderRadius: '8px',
+                    justifyContent: 'center', margin: '0 auto', maxWidth: '800px'
+                }}>
+                    <Avatar src="https://via.placeholder.com/150" sx={{ width: 150, height: 150, marginRight: '20px' }} />
+                    <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                        <Typography variant="h5" fontWeight="bold">{my.userId}</Typography>
+                        <Typography variant="body2" color="textSecondary">{my.userName}</Typography>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', width: '200px' }}>
+                            <Typography variant="body2"><strong>{followers.length}</strong> 팔로워</Typography>
+                            <Typography variant="body2"><strong>{following.length}</strong> 팔로우</Typography>
+                        </Box>
+                        <Button variant="contained" color="primary" sx={{ marginTop: '10px' }}>팔로우</Button>
                     </Box>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        className={classes.button}
-                    >
-                        팔로우
-                    </Button>
                 </Box>
-            </Box>
 
-            {/* 팔로워 목록 */}
-            <Box mt={4}>
-                <Typography variant="h6" fontWeight="bold" mb={2}>
-                    팔로워 목록
-                </Typography>
-                <Box>
-                    {followers.map((f) => (
-                        <Box key={f.userId} className={classes.listItem}>
-                            <Typography variant="body2">{f.userName}</Typography>
-                            <Button variant="outlined" size="small">
-                                팔로우
-                            </Button>
+                <Grid container spacing={2} sx={{ marginTop: '20px' }}>
+                    {feeds.length > 0 ? (
+                        feeds.map((feed, index) => (
+                            <Grid item xs={12} sm={6} md={4} key={index}>
+                                <Paper sx={{
+                                    width: '100%', height: 250,
+                                    backgroundColor: '#e4e4e4',
+                                    marginBottom: '20px', overflow: 'hidden'
+                                }}>
+                                    <img
+                                        src={`http://localhost:3005/feed/${feed.IMGNAME}`}
+                                        alt={`Post ${index + 1}`}
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                        onClick={() => handleOpenDetail(feed)}  // 클릭 시 feed 내용 보기
+                                    />
+                                </Paper>
+                            </Grid>
+                        ))
+                    ) : (
+                        <Typography variant="body2">게시물이 없습니다.</Typography>
+                    )}
+                </Grid>
+
+                <Dialog open={openDetail} onClose={handleCloseDetail} maxWidth="lg" fullWidth>
+                    <DialogTitle>
+                        <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <IconButton edge="end" onClick={handleCloseDetail}><CloseIcon /></IconButton>
                         </Box>
-                    ))}
-                </Box>
-            </Box>
-
-            {/* 팔로우 목록 */}
-            <Box mt={4}>
-                <Typography variant="h6" fontWeight="bold" mb={2}>
-                    팔로우 목록
-                </Typography>
-                <Box>
-                    {following.map((f) => (
-                        <Box key={f.userId} className={classes.listItem}>
-                            <Typography variant="body2">{f.userName}</Typography>
-                            <Button variant="outlined" size="small">
-                                팔로우 중
-                            </Button>
+                    </DialogTitle>
+                    <DialogContent sx={{ display: 'flex' }}>
+                        <Box sx={{ flex: 1, mr: 2 }}>
+                            <Carousel showThumbs={false}>
+                                {ImgList && ImgList.length > 0 ? (
+                                    ImgList.map((image, index) => (
+                                        <div key={index}>
+                                            <img src={`http://localhost:3005/${image.IMGPATH}${image.IMGNAME}`} alt={`Feed Image ${index + 1}`} />
+                                        </div>
+                                    ))
+                                ) : (
+                                    <Typography variant="body2">이미지가 없습니다.</Typography>
+                                )}
+                            </Carousel>
                         </Box>
-                    ))}
-                </Box>
-            </Box>
+                        <Box sx={{ flex: 1 }}>
+                            <Typography variant="h6">{selectedFeed?.userId}</Typography>
+                            <Typography variant="body2" color="textSecondary">{selectedFeed?.date}</Typography>
 
-            {/* 게시물 섹션 */}
-            <Grid container spacing={2} className={classes.postGrid}>
-                {[...Array(6)].map((_, index) => (
-                    <Grid item xs={4} key={index}>
-                        <Paper className={classes.post}>
-                            <img
-                                src={`https://via.placeholder.com/300x250?text=Post+${index + 1}`}
-                                alt={`Post ${index + 1}`}
-                                className={classes.postImage}
-                            />
-                        </Paper>
-                    </Grid>
-                ))}
-            </Grid>
-        </div>
+                            {isEditMode ? (
+                                <>
+                                    <TextField
+                                        fullWidth
+                                        multiline
+                                        value={editedContent}
+                                        onChange={(e) => setEditedContent(e.target.value)}
+                                        sx={{ mt: 2 }}
+                                    />
+                                    <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                                        <Button variant="contained" color="primary" onClick={handleEditFeed}>수정 완료</Button>
+                                        <Button variant="outlined" onClick={() => setIsEditMode(false)}>취소</Button>
+                                    </Box>
+                                </>
+                            ) : (
+                                <Typography variant="body1" sx={{ mt: 2 }}>{selectedFeed?.content}</Typography>
+                            )}
+                        </Box>
+                    </DialogContent>
+
+                    <DialogActions>
+                        {!isEditMode && (
+                            <>
+                                <Button onClick={() => handleDeleteFeed(selectedFeed.FEEDNO)} color="secondary" variant="outlined">삭제</Button>
+                                <Button onClick={() => setIsEditMode(true)} color="primary" variant="contained">수정</Button>
+                            </>
+                        )}
+                        <Button onClick={handleCloseDetail}>닫기</Button>
+                    </DialogActions>
+                </Dialog>
+            </Box>
+        </Box>
     );
 }
 
