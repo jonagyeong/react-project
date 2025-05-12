@@ -9,14 +9,16 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import { useNavigate } from 'react-router-dom';
 
-const SideNavigation = () => {
+const SideNavigation = ({ handleOpenModal }) => {
     const navigate = useNavigate();
+
     const navItems = [
-        { icon: <HomeIcon />, label: "홈", onClick: () => navigate('/') },
+        { icon: <HomeIcon />, label: "홈", onClick: () => navigate('/main') },
         { icon: <SearchIcon />, label: "검색", onClick: () => navigate('/search') },
         { icon: <NotificationsIcon />, label: "알림", onClick: null },
         { icon: <MessageIcon />, label: "메세지", onClick: null },
-        { icon: <CreateIcon />, label: "글쓰기", onClick: () => navigate('/create') },
+        { icon: <CreateIcon />, label: "글쓰기", onClick: () => handleOpenModal()
+ }, // MainPage에서 넘긴 모달 열기 함수 사용
         { icon: <AccountCircleIcon />, label: "프로필", onClick: () => navigate('/mypage') },
         { icon: <MoreHorizIcon />, label: "더보기", onClick: null },
     ];

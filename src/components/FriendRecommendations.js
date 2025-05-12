@@ -60,7 +60,6 @@ function FriendRecommendations({ user }) {
             flexDirection: "column", // 세로로 배치
             alignItems: "flex-end",   // 오른쪽 정렬
             zIndex: 1301,            // 다른 콘텐츠보다 위에 표시
-            backgroundColor: "white", // 흰색 배경 추가
             padding: "16px",          // 배경과 내용 사이에 여백 추가
             borderRadius: "8px",      // 모서리를 둥글게
         }}>

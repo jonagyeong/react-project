@@ -31,6 +31,9 @@ function MyPage() {
     const [isEditMode, setIsEditMode] = useState(false);
     const [editedContent, setEditedContent] = useState("");
 
+    const [modalOpen, setModalOpen] = useState(false);
+
+
     const my = jwtDecode(localStorage.getItem("token"));
     const navigate = useNavigate();
 
@@ -77,6 +80,10 @@ function MyPage() {
         setIsEditMode(false);
     };
 
+    const handleOpenModal = () => {
+        setModalOpen(true);
+    };
+
     const handleDeleteFeed = (feedNo) => {
         if (window.confirm("정말로 이 게시글을 삭제하시겠습니까?")) {
             fetch("http://localhost:3005/feed/" + feedNo, {
@@ -119,11 +126,11 @@ function MyPage() {
             });
     };
 
-    
+
 
     return (
         <Box sx={{ display: 'flex' }}>
-            <SideNavigation />
+            <SideNavigation handleOpenModal={handleOpenModal} />
 
             <Box sx={{ marginLeft: '200px', padding: '20px', width: '100%' }}>
                 <Box sx={{
