@@ -14,7 +14,7 @@ function FeedDetailModal({
     selectedFeed,
     feeds
 }) {
-    const [editedContent, setEditedContent] = useState(selectedFeed?.content);
+    const [editedContent, setEditedContent] = useState(selectedFeed?.CONTENT);
     const [imgList, setImgList] = useState([]); // 이미지 리스트 상태
     const [hashtags, setHashtags] = useState([]);
     const [menuFeedId, setMenuFeedId] = useState(null);
@@ -120,8 +120,8 @@ function FeedDetailModal({
                         </Box>
 
                         <Box sx={{ flex: 1 }}>
-                            <Typography variant="h6">{selectedFeed.userId}</Typography>
-                            <Typography variant="body2" color="textSecondary">{selectedFeed.date}</Typography>
+                            <Typography variant="h6">{selectedFeed.USERID}</Typography>
+                            <Typography variant="body2" color="textSecondary">{selectedFeed.REGDATE}</Typography>
 
                             <>
                                 <Typography variant="body1" sx={{ mt: 2 }}>
