@@ -41,14 +41,12 @@ function FeedModal({ open, onClose, fnFeedList, editMode, editingFeed }) {
 
     useEffect(() => {
         if (editMode && editingFeed) {
-            console.log("Editing feed: ", editingFeed);  // 전체 editingFeed 확인
-            console.log("Thumbnail: ", editingFeed.thumbnail);  // thumbnail 확인
+            console.log("Editing feed: ", editingFeed);
             setContent(editingFeed.content);
             setLocation(editingFeed.location || '');
             setVisibleScope(editingFeed.visible_scope || 'ALL');
         }
     }, [editMode, editingFeed]);
-
 
     const handleFileChange = (e) => {
         setFile(e.target.files);
@@ -78,7 +76,6 @@ function FeedModal({ open, onClose, fnFeedList, editMode, editingFeed }) {
             return;
         }
 
-        // 이미지가 없으면 등록을 진행하지 않음
         if (!file || file.length === 0) {
             alert("이미지를 선택하세요.");
             return;
@@ -94,7 +91,6 @@ function FeedModal({ open, onClose, fnFeedList, editMode, editingFeed }) {
         };
 
         const url = editMode ? "http://localhost:3005/feed/" + editingFeed.id : "http://localhost:3005/feed";
-
         const method = editMode ? "PUT" : "POST";
 
         fetch(url, {
@@ -202,7 +198,7 @@ function FeedModal({ open, onClose, fnFeedList, editMode, editingFeed }) {
                         {user && (
                             <Box display="flex" alignItems="center" mb={2}>
                                 <img
-                                    src=""
+                                    src={`http://localhost:3005/${user.profileImage}`}
                                     alt="프로필"
                                     style={{ width: 32, height: 32, borderRadius: '50%', marginRight: 8 }}
                                 />

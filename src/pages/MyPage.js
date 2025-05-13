@@ -74,8 +74,6 @@ function MyPage() {
 
 
 
-
-
     return (
         <Box sx={{ display: 'flex' }}>
 
@@ -130,6 +128,7 @@ function MyPage() {
                         open={Boolean(selectedFeed)}
                         onClose={() => setSelectedFeed(null)}
                         selectedFeed={selectedFeed}
+                        feeds={feeds}
                     />
                 )}
             </Box>

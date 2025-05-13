@@ -8,8 +8,8 @@ import { jwtDecode } from 'jwt-decode';
 import { useNavigate } from "react-router-dom";
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import ShareIcon from '@mui/icons-material/Share';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
+import StarIcon from '@mui/icons-material/Star';
+
 
 import FriendRecommendations from "../components/FriendRecommendations";
 import FeedModal from '../components/FeedModal';
@@ -72,7 +72,7 @@ function MainPage() {
             .then(res => res.json())
             .then(data => {
                 const filteredFeeds = data.list.filter(feed =>
-                    (feed.VISIBLE_SCOPE === "ALL" || feed.VISIBLE_SCOPE === "FRIEND") && feed.USERID !== user.userId
+                    (feed.VISIBLE_SCOPE === viewType || feed.VISIBLE_SCOPE === "ALL") && feed.USERID !== user.userId
                 );
                 setFeeds(filteredFeeds);
             });
@@ -80,6 +80,7 @@ function MainPage() {
 
     useEffect(() => {
         fnFeedList();
+        console.log(viewType)
     }, [viewType]); // viewType이 변경될 때마다 피드 목록을 다시 가져옵니다.
 
 
@@ -96,26 +97,12 @@ function MainPage() {
         setSelectedFeed(feed);
     };
 
-    const handleDeleteFeed = (feedId) => {
-        if (!window.confirm("삭제하시겠습니까?")) {
-            handleMenuClose();
-            return;
-        }
-        fetch("http://localhost:3005/feed/" + feedId, {
-            method: "DELETE"
-        })
-            .then(res => res.json())
-            .then(data => {
-                alert("삭제 완료!")
-                handleMenuClose();
-                fnFeedList();
-            })
+
+    // 별 클릭 시 전체 공개/친구 공개 토글
+    const handleViewChange = () => {
+        setViewType(prevType => prevType === "ALL" ? "FRIEND" : "ALL");
     };
 
-    // 전체 공개/친구 공개 버튼 클릭 시
-    const handleViewChange = (type) => {
-        setViewType(type);
-    };
 
     return (
         <Box display="flex">
@@ -131,15 +118,26 @@ function MainPage() {
                     alignItems: "flex-start",
                 }}>
                 <Box sx={{ width: "100%", maxWidth: 450 }}>
-                    {/* 공개 범위 버튼 */}
-                    <Box display="flex" justifyContent="space-between" mb={2}>
-                        <Button variant={viewType === "ALL" ? "contained" : "outlined"} onClick={() => handleViewChange("ALL")}>
-                            전체 공개
-                        </Button>
-                        <Button variant={viewType === "FRIEND" ? "contained" : "outlined"} onClick={() => handleViewChange("FRIEND")}>
-                            친구 공개
-                        </Button>
+                    {/* 초록색 별 버튼 클릭 시 전체 공개/친구 공개 토글 */}
+                    <Box display="flex" justifyContent="flex-end" alignItems="center" mb={2}>
+                        <Typography sx={{ marginRight: "8px", fontWeight: "bold", color: viewType === "ALL" ? "gray" : "green" }}>
+                            {viewType === "ALL" ? "전체" : "친한 친구"}
+                        </Typography>
+                        <IconButton onClick={handleViewChange}>
+                            <StarIcon
+                                sx={{
+                                    fontSize: 25,
+                                    borderRadius: "50%", // 원 형태로 만듦
+                                    color: viewType === "ALL" ? "gray" : "green", // 아이콘 색상
+                                    border: "2px solid", // 테두리 두께
+                                    borderColor: viewType === "ALL" ? "gray" : "green", // 테두리 색상
+                                    padding: "4px", // 아이콘과 원 테두리 간격 추가
+                                }}
+                            />
+                        </IconButton>
                     </Box>
+
+
                     {feeds.length === 0 ? (
                         <Typography variant="body2">피드를 불러오는 중입니다...</Typography>
                     ) : (
@@ -279,7 +277,7 @@ function MainPage() {
                 sx={{ zIndex: 1301 }}
             />
 
-            {selectedFeed && (
+            {selectedFeed &&(
                 <FeedDetailModal
                     open={Boolean(selectedFeed)}
                     onClose={() => setSelectedFeed(null)}
@@ -297,44 +295,21 @@ function MainPage() {
                         minWidth: '280px'
                     }}
                 >
-                    {user && feeds.find(f => f.FEEDNO === menuFeedId)?.USERID === user.userId ? (
-                        <>
-                            <Button fullWidth onClick={() => {
-                                const feedToEdit = feeds.find(f => f.FEEDNO === menuFeedId);
-                                const convertedFeed = {
-                                    id: feedToEdit.FEEDNO,
-                                    content: feedToEdit.CONTENT,
-                                    location: feedToEdit.LOCATION,
-                                    visible_scope: feedToEdit.VISIBLE_SCOPE,
-                                    thumbnail: feedToEdit.IMGPATH + feedToEdit.IMGNAME
-                                };
-                                console.log("convertedFeed ==> ", convertedFeed)
-                                setEditingFeed(convertedFeed);
-                                setEditMode(true);
-                                setModalOpen(true); // 기존 FeedModal 재사용
-                                handleMenuClose();
-                            }}>수정</Button>
+                    <>
+                        <Button fullWidth onClick={() => {
+                            console.log("신고 클릭");
+                            handleMenuClose();
+                        }} style={{ color: "red" }}>신고</Button>
+                        <Button fullWidth onClick={() => {
+                            console.log("팔로우/팔로우 해제 클릭");
+                            handleMenuClose();
+                        }}>팔로우/팔로우 해제</Button>
+                        <Button fullWidth onClick={() => {
+                            console.log("차단 클릭");
+                            handleMenuClose();
+                        }} style={{ color: "red" }}>차단</Button>
+                    </>
 
-                            <Button fullWidth onClick={() => {
-                                handleDeleteFeed(menuFeedId);
-                            }} style={{ color: "red" }}>삭제</Button>
-                        </>
-                    ) : (
-                        <>
-                            <Button fullWidth onClick={() => {
-                                console.log("신고 클릭");
-                                handleMenuClose();
-                            }} style={{ color: "red" }}>신고</Button>
-                            <Button fullWidth onClick={() => {
-                                console.log("팔로우/팔로우 해제 클릭");
-                                handleMenuClose();
-                            }}>팔로우/팔로우 해제</Button>
-                            <Button fullWidth onClick={() => {
-                                console.log("차단 클릭");
-                                handleMenuClose();
-                            }} style={{ color: "red" }}>차단</Button>
-                        </>
-                    )}
                     <Button fullWidth onClick={handleMenuClose} style={{ marginTop: '8px', color: 'gray' }}>
                         취소
                     </Button>
