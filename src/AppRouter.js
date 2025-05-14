@@ -8,6 +8,7 @@ import SettingPage from './pages/SettingPage';
 import DmPage from './pages/DmPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import FeedInsertPage from './pages/FeedInsertPage';
+import OtherPage from './pages/OtherPage'
 
 
 
@@ -23,6 +24,7 @@ function AppRouter() {
         <Route path="/dmpage" element={<DmPage />} />
         <Route path="/resetpasssword" element={<ResetPasswordPage />} />
         <Route path="/feedinsert" element={<FeedInsertPage />} />
+        <Route path="/otherpage" element={<OtherPage />} />
       </Routes>
     </Router>
   );

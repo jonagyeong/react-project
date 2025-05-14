@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import {
     Box, Typography, TextField, Button, Avatar,
     Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
-    Snackbar, Card, CardHeader, CardMedia, CardContent, IconButton
+    Snackbar, Card, CardHeader, CardMedia, CardContent, IconButton, Radio, RadioGroup, FormControlLabel
 } from "@mui/material";
 import { jwtDecode } from 'jwt-decode';
 import { useNavigate } from "react-router-dom";
@@ -33,11 +33,15 @@ function MainPage() {
     const [editingFeed, setEditingFeed] = useState(null);
     const [viewType, setViewType] = useState("ALL"); // "ALL" 또는 "FRIEND" 선택
 
+    const [menuFeed, setMenuFeed] = useState(null); // feed 정보를 저장할 상태 추가
+
+    const [reportReason, setReportReason] = useState("");  // 신고 사유 상태 추가
+    const [reportDialogOpen, setReportDialogOpen] = useState(false);
 
     const navigate = useNavigate();
 
     const handleMenuOpen = (feed, event) => {
-
+        setMenuFeed(feed);
         setMenuFeedId(feed.FEEDNO);
         setMenuOpen(true); // 팝업 열기
         setAnchorEl(event.currentTarget);// ✅ 클릭된 요소를 anchor로 지정
@@ -68,11 +72,13 @@ function MainPage() {
     }
 
     const fnFeedList = () => {
-        fetch("http://localhost:3005/feed/list")
+        fetch("http://localhost:3005/feed/list/" + user.userId)
             .then(res => res.json())
             .then(data => {
                 const filteredFeeds = data.list.filter(feed =>
-                    (feed.VISIBLE_SCOPE === viewType || feed.VISIBLE_SCOPE === "ALL") && feed.USERID !== user.userId
+                    (feed.VISIBLE_SCOPE === viewType || feed.VISIBLE_SCOPE === "ALL") &&
+                    feed.USERID !== user.userId &&
+                    !data.blockedUsers.includes(feed.USERID) // ← 추가
                 );
                 setFeeds(filteredFeeds);
             });
@@ -103,6 +109,55 @@ function MainPage() {
         setViewType(prevType => prevType === "ALL" ? "FRIEND" : "ALL");
     };
 
+
+    const handleReportSubmit = () => {
+        if (!menuFeed || !reportReason) return;
+
+        const reportData = {
+            report_type: "FEED",
+            target_id: menuFeed.USERID,
+            userID: user.userId,
+            reason: reportReason
+        };
+
+        fetch("http://localhost:3005/report", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(reportData)
+        })
+            .then(res => res.json())
+            .then(data => {
+                alert("신고가 접수되었습니다.");
+                setReportDialogOpen(false); // 신고 팝업 닫기
+                handleMenuClose(); // 메뉴 닫기
+            })
+            .catch(err => {
+                console.error("신고 실패", err);
+            });
+    };
+
+    // 차단 요청 함수
+    const handleBlock = (targetUserId) => {
+        const blockData = {
+            userId: user.userId,
+            to_userid: targetUserId
+        };
+
+        fetch("http://localhost:3005/block", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(blockData)
+        })
+            .then(res => res.json())
+            .then(data => {
+                alert("해당 사용자를 차단했습니다.");
+                handleMenuClose();
+                fnFeedList(); // 피드 목록 새로고침
+            })
+            .catch(err => {
+                console.error("차단 실패", err);
+            });
+    };
 
     return (
         <Box display="flex">
@@ -160,10 +215,18 @@ function MainPage() {
                                         </IconButton>
                                     }
                                     title={
-                                        <Typography variant="subtitle1">
+                                        <Typography
+                                            variant="subtitle1"
+                                            sx={{ cursor: "pointer", "&:hover": { textDecoration: "underline" } }}
+                                            onClick={(e) => {
+                                                e.stopPropagation(); // 카드 클릭 이벤트 막기
+                                                navigate(`/otherpage?userId=${feed.USERID}`);
+                                            }}
+                                        >
                                             @{feed.USERID} <span style={{ color: '#999' }}>· {getTimeAgo(feed.REGDATE)}</span>
                                         </Typography>
                                     }
+
                                 />
                                 {feed.IMGNAME && (
                                     <CardMedia
@@ -208,6 +271,25 @@ function MainPage() {
                         ))
                     )}
                 </Box>
+
+                {/* 신고 사유 선택 팝업 */}
+                <Dialog open={reportDialogOpen} onClose={() => setReportDialogOpen(false)}>
+                    <DialogTitle>신고 사유 선택</DialogTitle>
+                    <DialogContent>
+                        <DialogContentText>해당 피드를 신고하려는 이유를 선택해주세요.</DialogContentText>
+                        <RadioGroup value={reportReason} onChange={(e) => setReportReason(e.target.value)}>
+                            <FormControlLabel value="부적절한 콘텐츠" control={<Radio />} label="부적절한 콘텐츠" />
+                            <FormControlLabel value="허위 정보" control={<Radio />} label="허위 정보" />
+                            <FormControlLabel value="혐오 발언" control={<Radio />} label="혐오 발언" />
+                            <FormControlLabel value="기타" control={<Radio />} label="기타" />
+                        </RadioGroup>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setReportDialogOpen(false)} color="primary">취소</Button>
+                        <Button onClick={handleReportSubmit} color="primary">신고</Button>
+                    </DialogActions>
+                </Dialog>
+
 
                 {searchOpen && (
                     <Box mt={3}>
@@ -277,7 +359,7 @@ function MainPage() {
                 sx={{ zIndex: 1301 }}
             />
 
-            {selectedFeed &&(
+            {selectedFeed && (
                 <FeedDetailModal
                     open={Boolean(selectedFeed)}
                     onClose={() => setSelectedFeed(null)}
@@ -296,18 +378,12 @@ function MainPage() {
                     }}
                 >
                     <>
-                        <Button fullWidth onClick={() => {
-                            console.log("신고 클릭");
-                            handleMenuClose();
-                        }} style={{ color: "red" }}>신고</Button>
+                        <Button fullWidth onClick={() => { setReportDialogOpen(true) }} style={{ color: "red" }}>신고</Button>
                         <Button fullWidth onClick={() => {
                             console.log("팔로우/팔로우 해제 클릭");
                             handleMenuClose();
                         }}>팔로우/팔로우 해제</Button>
-                        <Button fullWidth onClick={() => {
-                            console.log("차단 클릭");
-                            handleMenuClose();
-                        }} style={{ color: "red" }}>차단</Button>
+                        <Button fullWidth onClick={handleBlock} style={{ color: "red" }}>차단</Button>
                     </>
 
                     <Button fullWidth onClick={handleMenuClose} style={{ marginTop: '8px', color: 'gray' }}>

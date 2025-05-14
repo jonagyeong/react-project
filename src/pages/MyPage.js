@@ -8,6 +8,8 @@ import { useNavigate } from "react-router-dom";
 import CloseIcon from '@mui/icons-material/Close';
 import { Carousel } from 'react-responsive-carousel';
 import 'react-responsive-carousel/lib/styles/carousel.min.css';
+import SettingsIcon from '@mui/icons-material/Settings';
+
 
 import SideNavigation from "../components/SideNavigation";
 import FeedModal from '../components/FeedModal'
@@ -88,13 +90,23 @@ function MyPage() {
                 }}>
                     <Avatar src="https://via.placeholder.com/150" sx={{ width: 150, height: 150, marginRight: '20px' }} />
                     <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                        <Typography variant="h5" fontWeight="bold">{my.userId}</Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Typography variant="h5" fontWeight="bold">@{my.userId}</Typography>
+                            <IconButton
+                                onClick={() => navigate('/settingpage')}
+                                sx={{ ml: 1 }}
+                                fontSize = '10px'
+                                aria-label="설정"
+                            >
+                                <SettingsIcon />
+                            </IconButton>
+                        </Box>
                         <Typography variant="body2" color="textSecondary">{my.userName}</Typography>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', width: '200px' }}>
                             <Typography variant="body2"><strong>{followers.length}</strong> 팔로워</Typography>
                             <Typography variant="body2"><strong>{following.length}</strong> 팔로우</Typography>
                         </Box>
-                        <Button variant="contained" color="primary" sx={{ marginTop: '10px' }}>팔로우</Button>
+
                     </Box>
                 </Box>
 

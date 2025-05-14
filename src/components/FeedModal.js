@@ -32,7 +32,7 @@ const style = {
     overflow: 'hidden',
 };
 
-function FeedModal({ open, onClose, fnFeedList, editMode, editingFeed }) {
+function FeedModal({ open, onClose, editMode, editingFeed }) {
     const [file, setFile] = useState(null);
     const [content, setContent] = useState('');
     const [location, setLocation] = useState('');
@@ -105,7 +105,6 @@ function FeedModal({ open, onClose, fnFeedList, editMode, editingFeed }) {
                 console.log(editMode ? "피드 수정 성공:" : "피드 등록 성공:", data);
                 if (editMode) {
                     onClose(); // 수정 후 모달 닫기
-                    fnFeedList(); // 리스트 새로고침
                     navigate("/main"); // 원하는 페이지로 이동
                 } else {
                     fnUploadFile(data.result.insertId, User.userId); // 새 피드 등록 후 이미지 업로드
@@ -119,7 +118,6 @@ function FeedModal({ open, onClose, fnFeedList, editMode, editingFeed }) {
     const fnUploadFile = (feedId, userId) => {
         if (!file || file.length === 0) {
             onClose();
-            fnFeedList();
             return;
         }
 
@@ -138,7 +136,6 @@ function FeedModal({ open, onClose, fnFeedList, editMode, editingFeed }) {
             .then(data => {
                 console.log("이미지 업로드 성공:", data);
                 onClose();  // 모달 닫기
-                fnFeedList(); // 피드 리스트 새로고침
                 navigate("/main"); // 원하는 페이지로 이동
             })
             .catch(err => {

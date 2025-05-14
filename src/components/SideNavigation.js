@@ -43,7 +43,7 @@ const SideNavigation = ({ handleOpenModal }) => {
         { icon: <HomeIcon />, label: "홈", onClick: () => navigate('/main') },
         { icon: <SearchIcon />, label: "검색", onClick: () => navigate() },
         { icon: <NotificationsIcon />, label: "알림", onClick: null },
-        { icon: <MessageIcon />, label: "메세지", onClick: null },
+        { icon: <MessageIcon />, label: "메세지", onClick: () => navigate('/dmpage') },
         { icon: <CreateIcon />, label: "글쓰기", onClick: () => handleOpenModal() },
         { icon: <AccountCircleIcon />, label: "프로필", onClick: () => navigate('/mypage') },
         {

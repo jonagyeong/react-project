@@ -1,69 +1,190 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Box,
     Typography,
-    Switch,
     Button,
     TextField,
-    List,
-    ListItem,
-    ListItemText,
-    ListItemSecondaryAction,
-    IconButton,
+    Switch,
     Checkbox,
-    Divider
+    FormControlLabel
 } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
-import SearchIcon from '@mui/icons-material/Search';
+import { styled } from '@mui/material/styles';
+import { jwtDecode } from 'jwt-decode';
+
+import SideNavigation from '../components/SideNavigation';
+import FeedModal from '../components/FeedModal';
+
+const IOSSwitch = styled((props) => (
+    <Switch focusVisibleClassName=".Mui-focusVisible" disableRipple {...props} />
+))(({ theme }) => ({
+    width: 42,
+    height: 26,
+    padding: 0,
+    '& .MuiSwitch-switchBase': {
+        padding: 0,
+        margin: 2,
+        transitionDuration: '300ms',
+        '&.Mui-checked': {
+            transform: 'translateX(16px)',
+            color: '#fff',
+            '& + .MuiSwitch-track': {
+                backgroundColor: '#1e88e5',
+            },
+        },
+        '&.Mui-focusVisible .MuiSwitch-thumb': {
+            color: '#33cf4d',
+            border: '6px solid #fff',
+        },
+        '&.Mui-disabled .MuiSwitch-thumb': {
+            color: '#f5f5f5',
+        },
+        '&.Mui-disabled + .MuiSwitch-track': {
+            opacity: 0.7,
+        },
+    },
+    '& .MuiSwitch-thumb': {
+        boxSizing: 'border-box',
+        width: 22,
+        height: 22,
+    },
+    '& .MuiSwitch-track': {
+        borderRadius: 26 / 2,
+        backgroundColor: '#E9E9EA',
+        opacity: 1,
+        transition: theme.transitions.create(['background-color'], {
+            duration: 500,
+        }),
+    },
+}));
 
 function SettingPage() {
     const [isPrivate, setIsPrivate] = useState(false);
     const [reason, setReason] = useState('');
     const [password, setPassword] = useState('');
-    const [actualPassword] = useState('1234'); // 실제로는 서버에서 확인해야 함
-    const [accountActive, setAccountActive] = useState(true); // 계정 활성화 상태 (기본값은 활성화)
-    
-    const [blockedUsers, setBlockedUsers] = useState(['user123', 'troublemaker']);
-    const [closeFriends, setCloseFriends] = useState([]);
-    const [allFriends] = useState(['friend1', 'friend2', 'friend3']);
-    const [searchTerm, setSearchTerm] = useState('');
+    const [mutuals, setMutuals] = useState([]);
+    const [closeFriends, setCloseFriends] = useState(new Set());
 
-    // 친구 목록 및 상태를 백엔드에서 가져오는 함수
-    useEffect(() => {
-        const fetchCloseFriends = async () => {
-            const response = await fetch("http://localhost:3005/profile/closeFriends");
-            const data = await response.json();
-            setCloseFriends(data.closeFriends);
-        };
+    const [selectedSetting, setSelectedSetting] = useState('');
+    const [modalOpen, setModalOpen] = useState(false);
 
-        fetchCloseFriends();
-    }, []);
 
-    const togglePrivacy = () => {
-        setIsPrivate(!isPrivate);
+    let user = null;
+    const token = localStorage.getItem("token");
+    if (token) {
+        try {
+            user = jwtDecode(token);
+        } catch (err) {
+            console.error("토큰 디코딩 실패:", err);
+        }
+    }
+
+    const fnUserYn = () => {
+        fetch("http://localhost:3005/profile/yn/" + user.userId)
+            .then(res => res.json())
+            .then(data => {
+                if (data.yn === "Y") {
+                    setIsPrivate(true);
+                } else {
+                    setIsPrivate(false);
+                }
+            });
+    }
+
+    const fetchMutuals = async () => {
+        try {
+            const res = await fetch("http://localhost:3005/follow/mutual/" + user.userId);
+            const data = await res.json();
+            setMutuals(data.mutual);
+        } catch (err) {
+            console.error("맞팔 목록 가져오기 실패", err);
+        }
     };
 
-    const toggleAccountStatus = async () => {
-        setAccountActive(!accountActive);
+    const fetchCloseFriends = async () => {
+        try {
+            const res = await fetch("http://localhost:3005/close-friend/" + user.userId);
+            const data = await res.json();
+            setCloseFriends(new Set(data.list));
+        } catch (err) {
+            console.error("친한 친구 목록 가져오기 실패", err);
+        }
+    }
 
-        const response = await fetch("http://localhost:3005/profile/updateStatus", {
-            method: 'POST',
+    const toggleCloseFriend = async (friendId) => {
+        const updated = new Set(closeFriends);
+        const isClose = updated.has(friendId);
+
+        try {
+            const url = isClose
+                ? "http://localhost:3005/close-friend/remove"
+                : "http://localhost:3005/close-friend";
+            const method = "POST";
+
+            const res = await fetch(url, {
+                method,
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ userId: user.userId, friendUserId: friendId })
+            });
+
+            const result = await res.json();
+            if (result.success) {
+                if (isClose) {
+                    updated.delete(friendId);
+                } else {
+                    updated.add(friendId);
+                }
+                setCloseFriends(updated);
+            } else {
+                alert("친한 친구 업데이트 실패: " + result.message);
+            }
+        } catch (err) {
+            console.error("친한 친구 토글 실패", err);
+        }
+    };
+
+
+    useEffect(() => {
+        if (user && user.userId) {
+            fnUserYn();
+            fetchMutuals();
+            fetchCloseFriends();
+        }
+    }, []);
+
+    useEffect(() => {
+        console.log("맞팔 목록:", mutuals);
+        console.log("친한 친구 목록(Set):", closeFriends);
+    }, [mutuals, closeFriends]);
+
+    const handleSettingChange = (setting) => {
+        setSelectedSetting(setting);
+    };
+
+    const togglePrivacy = () => {
+        const newPrivacy = !isPrivate;
+        setIsPrivate(newPrivacy);
+
+        fetch("http://localhost:3005/profile/privacy", {
+            method: "PUT",
             headers: {
-                'Content-Type': 'application/json',
+                "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                userId: "currentUserId", // 현재 로그인된 사용자 ID를 사용
-                status: accountActive ? "inactive" : "active" // 계정 상태 변경
+                userId: user.userId,
+                isPrivate: newPrivacy
             })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            alert("계정 상태가 변경되었습니다.");
-        } else {
-            alert("계정 상태 변경에 실패했습니다.");
-        }
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) {
+                    alert("업데이트에 실패했습니다.");
+                }
+            })
+            .catch(err => {
+                console.error("Error updating privacy:", err);
+            });
     };
 
     const handleDeleteAccount = () => {
@@ -72,165 +193,129 @@ function SettingPage() {
             return;
         }
 
-        if (password !== actualPassword) {
-            alert("비밀번호가 일치하지 않습니다.");
-            return;
-        }
-
         if (window.confirm("정말로 회원탈퇴를 진행하시겠습니까?")) {
-            // TODO: 실제 회원탈퇴 API 호출
             alert("회원탈퇴가 완료되었습니다.");
         }
     };
 
-    const handleUnblock = (user) => {
-        setBlockedUsers(prev => prev.filter(u => u !== user));
+    const handleOpenModal = () => {
+        setModalOpen(true);
     };
 
-    const handleCloseFriendToggle = async (friend) => {
-        const isFriend = closeFriends.includes(friend);
-
-        if (isFriend) {
-            // 친구 취소
-            setCloseFriends(prev => prev.filter(f => f !== friend));
-            await fetch("http://localhost:3005/profile/removeCloseFriend", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    userId: "currentUserId", // 현재 로그인된 사용자 ID
-                    friendId: friend // 취소할 친구의 ID
-                })
-            });
-        } else {
-            // 친구 추가
-            setCloseFriends(prev => [...prev, friend]);
-            await fetch("http://localhost:3005/profile/addCloseFriend", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    userId: "currentUserId", // 현재 로그인된 사용자 ID
-                    friendId: friend // 추가할 친구의 ID
-                })
-            });
-        }
-    };
-
-    const filteredFriends = allFriends.filter(friend =>
-        friend.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const navItems = [
+        { label: "프로필 편집", setting: "editProfile" },
+        { label: "계정공개범위", setting: "privacy" },
+        { label: "친한친구", setting: "closeFriends" },
+        { label: "차단된 계정", setting: "blockedAccounts" },
+        { label: "회원탈퇴", setting: "deleteAccount" },
+    ];
 
     return (
-        <Box sx={{ p: 4, maxWidth: 600, mx: 'auto' }}>
-            <Typography variant="h4" gutterBottom>
-                환경설정
-            </Typography>
-
-            {/* 공개/비공개 설정 */}
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-                <Typography variant="h6">비공개 계정</Typography>
-                <Switch checked={isPrivate} onChange={togglePrivacy} />
+        <Box sx={{ display: 'flex' }}>
+            <Box sx={{ width: 250 }}>
+                <SideNavigation handleOpenModal={handleOpenModal} />
             </Box>
 
-            <Divider sx={{ mb: 3 }} />
-
-            {/* 계정 활성화/비활성화 설정 */}
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-                <Typography variant="h6">계정 상태</Typography>
-                <Switch checked={accountActive} onChange={toggleAccountStatus} />
-            </Box>
-
-            <Divider sx={{ mb: 3 }} />
-
-            {/* 회원 탈퇴 */}
-            <Box mb={4}>
-                <Typography variant="h6" gutterBottom>회원 탈퇴</Typography>
-                <TextField
-                    label="탈퇴 사유"
-                    fullWidth
-                    multiline
-                    rows={2}
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    sx={{ mb: 2 }}
-                />
-                <TextField
-                    label="비밀번호 확인"
-                    type="password"
-                    fullWidth
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    sx={{ mb: 2 }}
-                />
-                <Button
-                    variant="outlined"
-                    color="error"
-                    onClick={handleDeleteAccount}
-                >
-                    회원탈퇴
-                </Button>
-            </Box>
-
-            <Divider sx={{ mb: 3 }} />
-
-            {/* 차단 목록 */}
-            <Box mb={4}>
-                <Typography variant="h6" gutterBottom>차단한 계정</Typography>
-                <List>
-                    {blockedUsers.map(user => (
-                        <ListItem key={user} divider>
-                            <ListItemText primary={user} />
-                            <ListItemSecondaryAction>
-                                <IconButton edge="end" onClick={() => handleUnblock(user)}>
-                                    <DeleteIcon />
-                                </IconButton>
-                            </ListItemSecondaryAction>
-                        </ListItem>
-                    ))}
-                    {blockedUsers.length === 0 && (
-                        <Typography color="text.secondary" sx={{ mt: 1 }}>
-                            차단한 계정이 없습니다.
+            <Box sx={{ width: "200px", backgroundColor: "white", height: "100vh", padding: "16px 8px" }}>
+                <Typography variant="body1" style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 30 }} ml={2}>
+                    설정
+                </Typography>
+                {navItems.map((item, index) => (
+                    <Box
+                        key={index}
+                        display="flex"
+                        alignItems="center"
+                        mb={2}
+                        sx={{ cursor: "pointer", fontWeight: selectedSetting === item.setting ? 'bold' : 'normal' }}
+                        onClick={() => handleSettingChange(item.setting)}
+                    >
+                        <Typography variant="body1" ml={2}>
+                            {item.label}
                         </Typography>
-                    )}
-                </List>
+                    </Box>
+                ))}
             </Box>
 
-            <Divider sx={{ mb: 3 }} />
+            <Box sx={{ flex: 1, padding: "16px" }}>
+                {selectedSetting === "editProfile" && (
+                    <>
+                        <Typography variant="h6" gutterBottom>프로필 편집</Typography>
+                        <TextField label="이름" fullWidth sx={{ mb: 2 }} />
+                        <TextField label="소개글" fullWidth sx={{ mb: 2 }} multiline />
+                        <Button variant="contained">저장</Button>
+                    </>
+                )}
 
-            {/* 친한 친구 관리 */}
-            <Box>
-                <Typography variant="h6" gutterBottom>친한 친구 관리</Typography>
-                <Box display="flex" alignItems="center" mb={2}>
-                    <SearchIcon />
-                    <TextField
-                        variant="standard"
-                        placeholder="친구 검색"
-                        fullWidth
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        sx={{ ml: 1 }}
-                    />
-                </Box>
-                <List>
-                    {filteredFriends.map(friend => (
-                        <ListItem key={friend} divider>
-                            <ListItemText primary={friend} />
-                            <Checkbox
-                                edge="end"
-                                checked={closeFriends.includes(friend)}
-                                onChange={() => handleCloseFriendToggle(friend)}
-                            />
-                        </ListItem>
-                    ))}
-                    {filteredFriends.length === 0 && (
-                        <Typography color="text.secondary" sx={{ mt: 1 }}>
-                            검색된 친구가 없습니다.
-                        </Typography>
-                    )}
-                </List>
+                {selectedSetting === "privacy" && (
+                    <>
+                        <Typography variant="h6" gutterBottom>계정 공개 범위</Typography>
+                        <Box display="flex" alignItems="center">
+                            <Typography variant="body1" mr={2}>비공개 계정</Typography>
+                            <IOSSwitch checked={isPrivate} onChange={togglePrivacy} />
+                        </Box>
+                    </>
+                )}
+
+                {selectedSetting === "closeFriends" && (
+                    <>
+                        <Typography variant="h6" gutterBottom>친한 친구</Typography>
+                        {mutuals.length === 0 ? (
+                            <Typography variant="body2">맞팔 중인 친구가 없습니다.</Typography>
+                        ) : (
+                            mutuals.map((friendId, idx) => (
+                                <Box key={idx} display="flex" alignItems="center" mb={1}>
+                                    <Typography sx={{ flex: 1 }}>{friendId}</Typography>
+                                    <Checkbox
+                                        checked={closeFriends.has(friendId)}
+                                        onChange={() => toggleCloseFriend(friendId)}
+                                        icon={<span style={{ borderRadius: '50%', border: '1px solid gray', width: 24, height: 24, display: 'inline-block' }} />}
+                                        checkedIcon={<span style={{ borderRadius: '50%', backgroundColor: '#4caf50', width: 24, height: 24, display: 'inline-block', color: 'white', textAlign: 'center', lineHeight: '24px' }}>✓</span>}
+                                    />
+                                </Box>
+                            ))
+                        )}
+                    </>
+                )}
+
+                {selectedSetting === "blockedAccounts" && (
+                    <>
+                        <Typography variant="h6" gutterBottom>차단된 계정</Typography>
+                        <Typography variant="body2">차단된 계정 목록이 여기에 표시됩니다.</Typography>
+                    </>
+                )}
+
+                {selectedSetting === "deleteAccount" && (
+                    <>
+                        <Typography variant="h6" gutterBottom>회원 탈퇴</Typography>
+                        <TextField
+                            label="탈퇴 사유"
+                            fullWidth
+                            multiline
+                            rows={2}
+                            value={reason}
+                            onChange={(e) => setReason(e.target.value)}
+                            sx={{ mb: 2 }}
+                        />
+                        <TextField
+                            label="비밀번호 확인"
+                            type="password"
+                            fullWidth
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            sx={{ mb: 2 }}
+                        />
+                        <Button variant="outlined" color="error" onClick={handleDeleteAccount}>
+                            회원탈퇴
+                        </Button>
+                    </>
+                )}
             </Box>
+            <FeedModal
+                open={modalOpen}
+                onClose={() => {
+                    setModalOpen(false);
+                }}
+            />
         </Box>
     );
 }
