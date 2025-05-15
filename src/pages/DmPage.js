@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import jwtDecode from 'jwt-decode'; // 수정: jwtDecode import 방식
+import { jwtDecode } from 'jwt-decode';  // jwtDecode는 default export임 (수정)
 import {
     Box, Typography, TextField, IconButton, Avatar
 } from '@mui/material';
@@ -15,6 +15,9 @@ function DmPage() {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [modalOpen, setModalOpen] = useState(false);
+    const [typingUserId, setTypingUserId] = useState(null);
+
+    const messagesEndRef = useRef(null);
 
     const token = localStorage.getItem("token");
 
@@ -29,86 +32,166 @@ function DmPage() {
     }, [token]);
 
     const socketRef = useRef(null);
+    const typingTimeoutRef = useRef(null);
+    const typingEmitTimeoutRef = useRef(null);
 
+    // 소켓 연결 및 이벤트 등록
     useEffect(() => {
         if (!user?.userId) return;
 
-        // 소켓 연결
-        socketRef.current = io("http://localhost:3005", {
-            transports: ['websocket'],
-        });
+        const socket = io("http://localhost:3005", { transports: ['websocket'] });
+        socketRef.current = socket;
 
-        socketRef.current.emit('join', user.userId);
+        socket.emit('join', user.userId);
 
-        // 새 메시지 수신 처리
-        socketRef.current.on('newMessage', (data) => {
+        // 새 메시지 수신 시 처리
+        socket.on('newMessage', (data) => {
+            if (!data.MESSAGE) {
+                console.warn('⚠️ 메시지 내용이 비어 있습니다:', data);
+                return;
+            }
+
             if (data.roomId === selectedRoomId) {
                 setMessages(prev => [...prev, data]);
-                // 읽음 처리 emit (내가 현재 보고있는 방이라면)
-                socketRef.current.emit('readMessage', { roomId: data.roomId, userId: user.userId });
+                // 새 메시지 받으면 즉시 읽음 처리 emit 및 방 목록 갱신
+                setTypingUserId(null);
+
+                // 남아있는 타이머가 있으면 클리어
+                if (typingTimeoutRef.current) {
+                    clearTimeout(typingTimeoutRef.current);
+                    typingTimeoutRef.current = null;
+                } // 여기서 입력중 표시 제거
+                socket.emit('readMessage', { roomId: data.roomId, userId: user.userId });
+                fetchMyRooms();
             } else {
                 fetchMyRooms();
             }
         });
 
-        // 읽음 상태 업데이트 이벤트 수신
-        socketRef.current.on('readMessage', ({ roomId, userId: readerId }) => {
+        socket.on('readMessage', ({ roomId, userId: readerId }) => {
+            console.log('🔔 [소켓] readMessage 이벤트 수신:', roomId, readerId);
+
             if (roomId === selectedRoomId && readerId !== user.userId) {
-                // 상대방이 메시지를 읽음 처리 했을 때, 해당 메시지들 읽음 상태 갱신
-                setMessages(prevMsgs =>
-                    prevMsgs.map(msg =>
-                        msg.FROM_USERID === user.userId ? { ...msg, READFLG: 'Y' } : msg
-                    )
-                );
-                fetchMyRooms();
+                setMessages(prevMsgs => {
+                    const newMsgs = [...prevMsgs];
+                    for (let i = newMsgs.length - 1; i >= 0; i--) {
+                        const msg = newMsgs[i];
+                        if (msg.FROM_USERID === user.userId && msg.READFLG !== 'Y') {
+                            newMsgs[i] = { ...msg, READFLG: 'Y' };
+                            break;
+                        }
+                    }
+
+                    // ✅ 루프 바깥에서 로그 찍기
+                    console.log('📝 메시지 업데이트 전:', prevMsgs);
+                    console.log('📝 메시지 업데이트 후:', newMsgs);
+
+                    return newMsgs;
+                });
+            }
+        });
+
+
+
+
+        // 상대방 타이핑 이벤트 수신
+        socket.on('typing', ({ roomId, fromUserId }) => {
+            if (roomId === selectedRoomId && fromUserId !== user.userId) {
+                setTypingUserId(fromUserId);
+
+                if (typingTimeoutRef.current) {
+                    clearTimeout(typingTimeoutRef.current);
+                }
             }
         });
 
         return () => {
-            socketRef.current.disconnect();
+            socket.disconnect();
             socketRef.current = null;
         };
     }, [user, selectedRoomId]);
 
+    // 방 목록 초기 로드 및 갱신
     useEffect(() => {
         if (user?.userId) {
             fetchMyRooms();
         }
     }, [user]);
 
+    // 메시지 수신 시 자동 스크롤
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages]);
+
     const fetchMyRooms = () => {
         fetch(`http://localhost:3005/dm/rooms/${user.userId}`)
             .then(res => res.json())
             .then(data => {
-                setRooms(data.rooms);
+                const uniqueRooms = data.rooms.filter((room, index, self) =>
+                    index === self.findIndex(r => r.ROOM_ID === room.ROOM_ID)
+                );
+                setRooms(uniqueRooms);
             })
             .catch(err => console.error('방 조회 실패:', err));
     };
 
+    // 특정 방 메시지 조회 + 읽음 처리
     const fetchMessages = async (roomId) => {
         if (!user?.userId) return;
 
-        // 읽음 처리 API 호출
-        await fetch(`http://localhost:3005/dm/read/${roomId}`, {
-            method: 'POST',
-            body: JSON.stringify({ userId: user.userId }),
-            headers: { 'Content-Type': 'application/json' }
-        }).catch(console.error);
+        try {
+            // 서버의 읽음 API는 POST이므로 body와 method 명시 필요
+            await fetch(`http://localhost:3005/dm/read/${roomId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.userId }),
+            });
 
-        // 읽음 처리 소켓 이벤트 emit
-        socketRef.current?.emit('readMessage', { roomId, userId: user.userId });
+            // 읽음 처리 소켓 이벤트 전송
+            socketRef.current?.emit('readMessage', { roomId, userId: user.userId });
 
-        // 메시지 목록 조회
-        fetch(`http://localhost:3005/dm/message/${roomId}`)
-            .then(res => res.json())
-            .then(data => {
-                setMessages(data.DMmessage || []);
-                setSelectedRoomId(roomId);
-                fetchMyRooms();
-            })
-            .catch(err => console.error('메시지 조회 실패:', err));
+            // 메시지 목록 조회
+            const res = await fetch(`http://localhost:3005/dm/message/${roomId}`);
+            const data = await res.json();
+
+            setMessages(data.DMmessage || []);
+            setSelectedRoomId(roomId);
+            fetchMyRooms();
+        } catch (err) {
+            console.error('메시지 조회 실패:', err);
+        }
     };
 
+    // 타이핑 이벤트 emit (500ms 디바운스)
+    const handleTyping = () => {
+        if (!selectedRoomId || !user?.userId) return;
+
+        if (typingEmitTimeoutRef.current) return;
+
+        typingEmitTimeoutRef.current = setTimeout(() => {
+            const room = rooms.find(r => r.ROOM_ID === selectedRoomId);
+            if (!room) {
+                typingEmitTimeoutRef.current = null;
+                return;
+            }
+            const toUserId = room.USERID;
+
+            socketRef.current?.emit('typing', {
+                roomId: selectedRoomId,
+                fromUserId: user.userId,
+                toUserId
+            });
+            typingEmitTimeoutRef.current = null;
+        }, 500);
+    };
+
+    // 메시지 입력 onChange 핸들러
+    const onChangeMessage = (e) => {
+        setNewMessage(e.target.value);
+        handleTyping();
+    };
+
+    // 메시지 전송 함수
     const sendMessage = () => {
         if (!newMessage.trim() || !selectedRoomId || !user?.userId) return;
 
@@ -118,42 +201,14 @@ function DmPage() {
 
         const toUserId = room.USERID;
 
-        // 소켓 메시지 전송
         socketRef.current?.emit('sendMessage', {
             roomId: selectedRoomId,
             fromUserId: user.userId,
             toUserId,
             message: messageToSend,
         });
-
-        // DB 저장 요청
-        fetch("http://localhost:3005/dm/message", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                roomId: selectedRoomId,
-                fromUserId: user.userId,
-                toUserId,
-                message: messageToSend
-            })
-        })
-            .then(res => res.json())
-            .then(data => {
-                const newMsg = {
-                    DM_ID: data.DMmessage.DM_ID,
-                    FROM_USERID: user.userId,
-                    TO_USERID: toUserId,
-                    MESSAGE: messageToSend,
-                    READFLG: 'N',
-                    REGDATE: data.DMmessage.REGDATE
-                };
-
-                setMessages(prev => [...prev, newMsg]);
-                setNewMessage('');
-            })
-            .catch(err => {
-                console.error('메시지 전송 실패:', err);
-            });
+        setNewMessage('');
+        setTypingUserId(null);
     };
 
     const selectedRoom = rooms.find(r => r.ROOM_ID === selectedRoomId);
@@ -180,7 +235,8 @@ function DmPage() {
                 marginLeft: 25,
                 p: 2,
             }}>
-                <Typography variant="h6" gutterBottom>메시지</Typography>
+                <Typography gutterBottom sx={{ fontSize: '15px', marginBottom: 5 }}>{user?.userId}</Typography>
+                <Typography gutterBottom sx={{ fontSize: '15px', color: 'gray', fontWeight: 'bold' }}>메시지</Typography>
                 {rooms.map(room => (
                     <Box
                         key={room.ROOM_ID}
@@ -248,36 +304,38 @@ function DmPage() {
                                         {isLastMyMsgRead && (
                                             <Typography variant="caption" color="primary" sx={{ mt: 0.3, display: 'block' }}>
                                                 방금 읽음
-                                            </Typography>
-                                        )}
-                                    </Box>
-                                );
-                            })}
-                        </Box>
+                                            </Typography>)} </Box>);
+                            })} <div ref={messagesEndRef} /> </Box>
+                        {typingUserId && (
+                            <Typography variant="caption" color="text.secondary" sx={{ mb: 1 }}>
+                                {typingUserId}님이 입력 중입니다...
+                            </Typography>
+                        )}
 
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
                             <TextField
                                 fullWidth
-                                size="small"
-                                variant="outlined"
                                 placeholder="메시지를 입력하세요"
                                 value={newMessage}
-                                onChange={e => setNewMessage(e.target.value)}
-                                onKeyDown={e => e.key === 'Enter' && sendMessage()}
+                                onChange={onChangeMessage}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        sendMessage();
+                                    }
+                                }}
                             />
-                            <IconButton onClick={sendMessage} color="primary">
+                            <IconButton onClick={sendMessage}>
                                 <SendIcon />
                             </IconButton>
                         </Box>
                     </>
                 ) : (
-                    <Typography variant="body1" color="text.secondary" sx={{ mt: 4 }}>
-                        대화를 시작하려면 대화방을 선택하세요.
-                    </Typography>
+                    <Typography variant="h6" color="text.secondary">대화를 선택하세요</Typography>
                 )}
             </Box>
 
-            <FeedModal open={modalOpen} onClose={() => setModalOpen(false)} />
+            <FeedModal open={modalOpen} handleClose={() => setModalOpen(false)} />
         </Box>
     );
 }
