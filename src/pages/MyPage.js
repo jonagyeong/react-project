@@ -103,8 +103,8 @@ function MyPage() {
                         </Box>
                         <Typography variant="body2" color="textSecondary">{my.userName}</Typography>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', width: '200px' }}>
-                            <Typography variant="body2"><strong>{followers.length}</strong> 팔로워</Typography>
                             <Typography variant="body2"><strong>{following.length}</strong> 팔로우</Typography>
+                            <Typography variant="body2"><strong>{followers.length}</strong> 팔로워</Typography>
                         </Box>
 
                     </Box>
