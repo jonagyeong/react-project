@@ -6,10 +6,13 @@ import {
     TextField,
     Switch,
     Checkbox,
-    FormControlLabel
+    FormControlLabel,
+    Avatar,
+    IconButton,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { jwtDecode } from 'jwt-decode';
+import PhotoCamera from '@mui/icons-material/PhotoCamera';
 
 import SideNavigation from '../components/SideNavigation';
 import FeedModal from '../components/FeedModal';
@@ -63,10 +66,21 @@ function SettingPage() {
     const [password, setPassword] = useState('');
     const [mutuals, setMutuals] = useState([]);
     const [closeFriends, setCloseFriends] = useState(new Set());
-
     const [selectedSetting, setSelectedSetting] = useState('');
     const [modalOpen, setModalOpen] = useState(false);
 
+    // 프로필 정보 상태
+    const [profile, setProfile] = useState({
+        userId: '',
+        address: '',
+        phone: '',
+        birth: '',
+        intro: '',
+        profileImg: '',
+        name: '',
+    });
+    const [profileImgFile, setProfileImgFile] = useState(null);
+    const [profileImgPreview, setProfileImgPreview] = useState('');
 
     let user = null;
     const token = localStorage.getItem("token");
@@ -78,6 +92,26 @@ function SettingPage() {
         }
     }
 
+    // 프로필 정보 불러오기
+    const fetchProfile = () => {
+        fetch("http://localhost:3005/profile/info/" + user.userId)
+            .then(res => res.json())
+            .then(data => {
+                console.log(data.profile)
+                setProfile({
+                    userId: data.profile.USERID || '',
+                    address: data.profile.ADDRESS || '',
+                    phone: data.profile.PHONE || '',
+                    birth: data.profile.BIRTH || '',
+                    intro: data.profile.INTRO || '',
+                    profileImg: data.profile.PROFILEIMG || '',
+                    name: data.profile.USERNAME || '', // 이름 필드가 별도일 경우 맞춰서 사용하세요
+                });
+                setProfileImgPreview(data.PROFILEIMG || '');
+            })
+            .catch(err => console.error("프로필 정보 불러오기 실패", err));
+    };
+
     const fnUserYn = () => {
         fetch("http://localhost:3005/profile/yn/" + user.userId)
             .then(res => res.json())
@@ -88,7 +122,7 @@ function SettingPage() {
                     setIsPrivate(false);
                 }
             });
-    }
+    };
 
     const fetchMutuals = async () => {
         try {
@@ -108,7 +142,7 @@ function SettingPage() {
         } catch (err) {
             console.error("친한 친구 목록 가져오기 실패", err);
         }
-    }
+    };
 
     const toggleCloseFriend = async (friendId) => {
         const updated = new Set(closeFriends);
@@ -144,12 +178,12 @@ function SettingPage() {
         }
     };
 
-
     useEffect(() => {
         if (user && user.userId) {
             fnUserYn();
             fetchMutuals();
             fetchCloseFriends();
+            fetchProfile();
         }
     }, []);
 
@@ -195,11 +229,87 @@ function SettingPage() {
 
         if (window.confirm("정말로 회원탈퇴를 진행하시겠습니까?")) {
             alert("회원탈퇴가 완료되었습니다.");
+            // 여기서 API 호출 필요하면 추가하세요
         }
     };
 
     const handleOpenModal = () => {
         setModalOpen(true);
+    };
+
+    // 프로필 입력 변경 핸들러
+    const handleInputChange = (field) => (e) => {
+        setProfile(prev => ({ ...prev, [field]: e.target.value }));
+    };
+
+    // 프로필 이미지 업로드 핸들러
+    const handleProfileImgChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setProfileImgFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setProfileImgPreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    // 프로필 저장 함수
+    const handleSaveProfile = async () => {
+        try {
+            let profileImgUrl = profile.profileImg;
+
+            // 이미지 파일이 새로 선택된 경우에만 업로드
+            if (profileImgFile) {
+                // 이미지 업로드 API 호출 예시 (실제 API 주소 및 방식에 맞게 수정 필요)
+                const formData = new FormData();
+                formData.append("profileImg", profileImgFile);
+                formData.append("userId", user.userId);
+
+                const uploadRes = await fetch("http://localhost:3005/profile/upload-img", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                const uploadData = await uploadRes.json();
+                if (uploadData.success && uploadData.url) {
+                    profileImgUrl = uploadData.url;
+                } else {
+                    alert("프로필 이미지 업로드 실패");
+                    return;
+                }
+            }
+
+            // 프로필 정보 PUT 요청
+            const res = await fetch("http://localhost:3005/profile", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    userId: user.userId,
+                    address: profile.address,
+                    phone: profile.phone,
+                    birth: profile.birth,
+                    intro: profile.intro,
+                    profileImg: profileImgUrl,
+                    name: profile.name,
+                }),
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                alert("프로필이 성공적으로 저장되었습니다.");
+                setProfileImgFile(null);
+                setProfileImgPreview(profileImgUrl);
+            } else {
+                alert("프로필 저장에 실패했습니다.");
+            }
+        } catch (err) {
+            console.error("프로필 저장 실패", err);
+            alert("프로필 저장 중 오류가 발생했습니다.");
+        }
     };
 
     const navItems = [
@@ -240,9 +350,71 @@ function SettingPage() {
                 {selectedSetting === "editProfile" && (
                     <>
                         <Typography variant="h6" gutterBottom>프로필 편집</Typography>
-                        <TextField label="이름" fullWidth sx={{ mb: 2 }} />
-                        <TextField label="소개글" fullWidth sx={{ mb: 2 }} multiline />
-                        <Button variant="contained">저장</Button>
+
+                        <Box display="flex" alignItems="center" mb={3}>
+                            {profile.userId}
+                            <Avatar
+                                src={profileImgPreview}
+                                alt="프로필 이미지"
+                                sx={{ width: 100, height: 100, mr: 2 }}
+                            />
+                            <label htmlFor="profile-img-upload">
+                                <input
+                                    accept="image/*"
+                                    id="profile-img-upload"
+                                    type="file"
+                                    style={{ display: 'none' }}
+                                    onChange={handleProfileImgChange}
+                                />
+                                <Button variant="contained" component="span" startIcon={<PhotoCamera />}>
+                                    사진 변경
+                                </Button>
+                            </label>
+                        </Box>
+
+                        <TextField
+                            label="이름"
+                            fullWidth
+                            sx={{ mb: 2 }}
+                            value={profile.name}
+                            onChange={handleInputChange('name')}
+                        />
+                        <TextField
+                            label="주소"
+                            fullWidth
+                            sx={{ mb: 2 }}
+                            value={profile.address}
+                            onChange={handleInputChange('address')}
+                        />
+                        <TextField
+                            label="전화번호"
+                            fullWidth
+                            sx={{ mb: 2 }}
+                            value={profile.phone}
+                            onChange={handleInputChange('phone')}
+                        />
+                        <TextField
+                            label="생년월일"
+                            type="date"
+                            fullWidth
+                            sx={{ mb: 2 }}
+                            InputLabelProps={{
+                                shrink: true,
+                            }}
+                            value={profile.birth}
+                            onChange={handleInputChange('birth')}
+                        />
+                        <TextField
+                            label="소개글"
+                            fullWidth
+                            multiline
+                            rows={3}
+                            sx={{ mb: 2 }}
+                            value={profile.intro}
+                            onChange={handleInputChange('intro')}
+                        />
+
+                        <Button variant="contained" onClick={handleSaveProfile}>저장</Button>
                     </>
                 )}
 
@@ -310,6 +482,7 @@ function SettingPage() {
                     </>
                 )}
             </Box>
+
             <FeedModal
                 open={modalOpen}
                 onClose={() => {

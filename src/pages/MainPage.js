@@ -32,11 +32,12 @@ function MainPage() {
     const [editMode, setEditMode] = useState(false);
     const [editingFeed, setEditingFeed] = useState(null);
     const [viewType, setViewType] = useState("ALL"); // "ALL" 또는 "FRIEND" 선택
-
     const [menuFeed, setMenuFeed] = useState(null); // feed 정보를 저장할 상태 추가
-
     const [reportReason, setReportReason] = useState("");  // 신고 사유 상태 추가
     const [reportDialogOpen, setReportDialogOpen] = useState(false);
+    const [likedFeeds, setLikedFeeds] = useState(new Set()); // 내가 좋아요한 피드 FEEDNO 집합
+    const [likesCount, setLikesCount] = useState({});
+
 
     const navigate = useNavigate();
 
@@ -62,6 +63,7 @@ function MainPage() {
     };
 
     let user = null;
+    console.log(user)
     const token = localStorage.getItem("token");
     if (token) {
         try {
@@ -74,15 +76,55 @@ function MainPage() {
     const fnFeedList = () => {
         fetch("http://localhost:3005/feed/list/" + user.userId)
             .then(res => res.json())
-            .then(data => {
-                const filteredFeeds = data.list.filter(feed =>
-                    (feed.VISIBLE_SCOPE === viewType || feed.VISIBLE_SCOPE === "ALL") &&
-                    feed.USERID !== user.userId &&
-                    !data.blockedUsers.includes(feed.USERID) // ← 추가
-                );
+            .then(async (data) => {
+                const filteredFeeds = data.list.filter(feed => {
+                    if (viewType === "ALL") {
+                        return feed.USERID !== user.userId && !data.blockedUsers.includes(feed.USERID);
+                    } else if (viewType === "FRIEND") {
+                        return feed.VISIBLE_SCOPE === "FRIEND" && feed.USERID !== user.userId && !data.blockedUsers.includes(feed.USERID);
+                    }
+                    return false;
+                });
+                // feeds 상태에는 피드 목록만 넣기
                 setFeeds(filteredFeeds);
+
+                // 좋아요 개수 비동기 요청
+                const likesData = await Promise.all(filteredFeeds.map(async (feed) => {
+                    try {
+                        const res = await fetch(`http://localhost:3005/feed/${feed.FEEDNO}/likes/count`);
+                        const likeData = await res.json();
+                        return { feedNo: feed.FEEDNO, count: likeData.likeCount || 0 };
+                    } catch (err) {
+                        console.error("좋아요 개수 불러오기 실패:", err);
+                        return { feedNo: feed.FEEDNO, count: 0 };
+                    }
+                }));
+
+                // likesCount 객체 생성
+                const likesCountObj = {};
+                likesData.forEach(({ feedNo, count }) => {
+                    likesCountObj[feedNo] = count;
+                });
+                setLikesCount(likesCountObj);
+
+                // 피드 배열에 likesCount 포함시키기 (중요)
+                const feedsWithLikes = filteredFeeds.map(feed => ({
+                    ...feed,
+                    likesCount: likesCountObj[feed.FEEDNO] || 0
+                }));
+
+                setFeeds(feedsWithLikes);
+
+                // 내가 좋아요한 피드도 조회
+                fetch("http://localhost:3005/feed/likes/" + user.userId)
+                    .then(res => res.json())
+                    .then(data => {
+                        setLikedFeeds(new Set(data.Like.map(like => like.FEEDNO)));
+                    });
             });
     };
+
+
 
     useEffect(() => {
         fnFeedList();
@@ -91,17 +133,62 @@ function MainPage() {
 
 
     const handleLogout = () => {
-        localStorage.removeItem("token");
-        setSnackOpen(true);
-        setDialogOpen(false);
+        localStorage.removeItem("token");  // 토큰 삭제
+        setSnackOpen(true);                 // 스낵바 보여주기
+        setDialogOpen(false);               // 로그아웃 확인 다이얼로그 닫기
         setTimeout(() => {
-            navigate("/");
-        }, 1500);
+            navigate("/");                  // 홈으로 이동
+        }, 1500);                          // 스낵바 잠시 보여주고 이동
     };
+
 
     const handleFeedClick = (feed) => {
         setSelectedFeed(feed);
     };
+
+
+    const handleLikeToggle = (feedNo) => {
+        const hasLiked = likedFeeds.has(feedNo);
+
+        if (hasLiked) {
+            fetch("http://localhost:3005/feed/unlike", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ feedNo, userId: user.userId })
+            })
+                .then(res => res.json())
+                .then(() => {
+                    setLikedFeeds(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete(feedNo);
+                        return newSet;
+                    });
+                    setFeeds(prevFeeds =>
+                        prevFeeds.map(f =>
+                            f.FEEDNO === feedNo ? { ...f, likesCount: f.likesCount - 1 } : f
+                        )
+                    );
+                })
+                .catch(console.error);
+        } else {
+            fetch("http://localhost:3005/feed/like", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ feedNo, userId: user.userId })
+            })
+                .then(res => res.json())
+                .then(() => {
+                    setLikedFeeds(prev => new Set(prev).add(feedNo));
+                    setFeeds(prevFeeds =>
+                        prevFeeds.map(f =>
+                            f.FEEDNO === feedNo ? { ...f, likesCount: f.likesCount + 1 } : f
+                        )
+                    );
+                })
+                .catch(console.error);
+        }
+    };
+
 
 
     // 별 클릭 시 전체 공개/친구 공개 토글
@@ -205,9 +292,10 @@ function MainPage() {
                             >
                                 <CardHeader
                                     avatar={
-                                        <Avatar sx={{ bgcolor: '#1976d2' }}>
-                                            {feed.USERID ? feed.USERID.charAt(0).toUpperCase() : 'U'}
-                                        </Avatar>
+                                        <Avatar
+                                            src={"/default-profile.png"}
+                                            sx={{ width: 32, height: 32, mr: 1 }}
+                                        />
                                     }
                                     action={
                                         <IconButton onClick={(e) => { e.stopPropagation(); handleMenuOpen(feed, e); }}>
@@ -256,16 +344,20 @@ function MainPage() {
                                         </Box>
                                     )}
                                     <Box display="flex" alignItems="center">
-                                        <IconButton>
-                                            <FavoriteIcon color="error" />
+                                        <IconButton
+                                            onClick={(e) => {
+                                                e.stopPropagation(); // 카드 클릭 이벤트 방지
+                                                handleLikeToggle(feed.FEEDNO);
+                                            }}
+                                        >
+                                            <FavoriteIcon color={likedFeeds.has(feed.FEEDNO) ? "error" : "disabled"} />
                                         </IconButton>
                                         <Typography variant="body2" sx={{ marginLeft: 1 }}>
                                             {feed.likesCount || 0} Likes
                                         </Typography>
-                                        <IconButton sx={{ marginLeft: 'auto' }}>
-                                            <ShareIcon />
-                                        </IconButton>
+
                                     </Box>
+
                                 </CardContent>
                             </Card>
                         ))

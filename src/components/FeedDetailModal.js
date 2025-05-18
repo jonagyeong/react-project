@@ -7,6 +7,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { Carousel } from 'react-responsive-carousel';
 
 import FeedModal from './FeedModal';
+import { getTimeAgo } from './TimeAgo';
 
 function FeedDetailModal({
     open,
@@ -84,7 +85,7 @@ function FeedDetailModal({
     };
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
+        <Dialog open={open} onClose={onClose} maxWidth='md' fullWidth={true} sx={{zIndex: 1400}}>
             {selectedFeed ? (
                 <>
                     <DialogTitle>
@@ -121,7 +122,7 @@ function FeedDetailModal({
 
                         <Box sx={{ flex: 1 }}>
                             <Typography variant="h6">{selectedFeed.USERID}</Typography>
-                            <Typography variant="body2" color="textSecondary">{selectedFeed.REGDATE}</Typography>
+                            <Typography variant="body2" color="textSecondary">{getTimeAgo(selectedFeed.REGDATE)}</Typography>
 
                             <>
                                 <Typography variant="body1" sx={{ mt: 2 }}>

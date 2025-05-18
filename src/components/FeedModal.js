@@ -9,7 +9,8 @@ import {
     MenuItem,
     Select,
     FormControl,
-    Modal
+    Modal,
+    Avatar
 } from '@mui/material';
 import { PhotoCamera } from '@mui/icons-material';
 import CloseIcon from '@mui/icons-material/Close';
@@ -194,10 +195,9 @@ function FeedModal({ open, onClose, editMode, editingFeed }) {
 
                         {user && (
                             <Box display="flex" alignItems="center" mb={2}>
-                                <img
-                                    src={`http://localhost:3005/${user.profileImage}`}
-                                    alt="프로필"
-                                    style={{ width: 32, height: 32, borderRadius: '50%', marginRight: 8 }}
+                                <Avatar
+                                    src={"/default-profile.png"}
+                                    sx={{ width: 32, height: 32, mr: 1 }}
                                 />
                                 <Typography variant="body1" fontWeight="bold">
                                     {user.userId}

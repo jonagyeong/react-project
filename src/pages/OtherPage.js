@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
-    Box, Avatar, Typography, Button, Grid, Paper, IconButton
+    Box, Avatar, Typography, Button, Grid, Paper, IconButton,
+    Dialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
 import { jwtDecode } from 'jwt-decode';
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -17,10 +18,12 @@ function OtherPage() {
     const [feeds, setFeeds] = useState([]);
     const [ImgList, setImgList] = useState([]);
     const [selectedFeed, setSelectedFeed] = useState(null);
-    const [isFollowing, setIsFollowing] = useState(false); // 팔로우 상태
+    const [isFollowing, setIsFollowing] = useState(false);
     const [isPrivate, setIsPrivate] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
-    const [followRequestStatus, setFollowRequestStatus] = useState(''); // 팔로우 요청 상태 추가
+    const [followRequestStatus, setFollowRequestStatus] = useState('');
+    const [showFollowerModal, setShowFollowerModal] = useState(false);
+    const [showFollowingModal, setShowFollowingModal] = useState(false);
 
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -32,11 +35,12 @@ function OtherPage() {
     const handleCloseModal = () => setModalOpen(false);
     const handleFeedClick = (feed) => setSelectedFeed(feed);
 
+    // 팔로우 상태 체크
     const checkFollowStatus = () => {
         if (!otherUserId || otherUserId === my.userId) return;
 
         const FollowCheck = {
-            fromUserId: my.userId, // 나의 userId를 from으로
+            fromUserId: my.userId,
             toUserId: otherUserId
         };
 
@@ -47,20 +51,36 @@ function OtherPage() {
         })
             .then(res => res.json())
             .then(data => {
-                setIsFollowing(data.follow); // 팔로우 상태 설정
-                setFollowRequestStatus(data.status); // 요청 상태 설정
+                setIsFollowing(data.follow);
+                setFollowRequestStatus(data.status);
             });
     };
 
-    // 최초 로딩 시 팔로우 상태 확인
+    // 팔로워/팔로잉 데이터 가져오기
+    const fetchFollowersAndFollowing = () => {
+        if (!otherUserId) return;
+
+        fetch("http://localhost:3005/profile/followers/" + otherUserId)
+            .then(res => res.json())
+            .then(data => setFollowers(data));
+
+        fetch("http://localhost:3005/profile/following/" + otherUserId)
+            .then(res => res.json())
+            .then(data => setFollowing(data));
+    };
+
     useEffect(() => {
         checkFollowStatus();
 
-        fetch("http://localhost:3005/follow/other/" + otherUserId)
+        fetch("http://localhost:3005/profile/" + otherUserId)
             .then(res => res.json())
             .then(data => {
                 setIsPrivate(data.private === 'Y');
+                setUser(data.info || {});
+                setFeeds(data.FeedList || []);
             });
+
+        fetchFollowersAndFollowing();
     }, [otherUserId, my.userId]);
 
     useEffect(() => {
@@ -73,8 +93,8 @@ function OtherPage() {
 
     const handleFollowToggle = async () => {
         const url = isFollowing
-            ? "http://localhost:3005/follow/unfollow" // 언팔로우
-            : "http://localhost:3005/follow";          // 팔로우
+            ? "http://localhost:3005/follow/unfollow"
+            : "http://localhost:3005/follow";
 
         const body = {
             fromUserId: my.userId,
@@ -88,18 +108,18 @@ function OtherPage() {
                 body: JSON.stringify(body)
             });
 
-            const data = await res.json().catch(() => ({})); // handle empty body on unfollow
+            const data = await res.json().catch(() => ({}));
 
             if (!isFollowing) {
                 if (data.status === 'ACCEPTED') {
-                    setIsFollowing(true); // 팔로우 성공 시 상태를 true로
-                    setFollowRequestStatus(''); // 요청이 수락되었으므로 요청 상태 초기화
+                    setIsFollowing(true);
+                    setFollowRequestStatus('');
                 } else if (data.status === 'PENDING') {
-                    setFollowRequestStatus('PENDING'); // 요청 상태 'PENDING'으로 변경
+                    setFollowRequestStatus('PENDING');
                 }
             } else {
-                setIsFollowing(false); // 언팔로우 후 상태를 false로
-                setFollowRequestStatus(''); // 요청 상태 초기화
+                setIsFollowing(false);
+                setFollowRequestStatus('');
             }
         } catch (error) {
             console.error("Follow toggle error:", error);
@@ -134,8 +154,20 @@ function OtherPage() {
                         </Box>
                         <Typography variant="body2" color="textSecondary">{user.USERNAME}</Typography>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', width: '200px' }}>
-                            <Typography variant="body2"><strong>{followers.length}</strong> 팔로워</Typography>
-                            <Typography variant="body2"><strong>{following.length}</strong> 팔로우</Typography>
+                            <Typography
+                                variant="body2"
+                                sx={{ cursor: 'pointer', textDecoration: 'underline' }}
+                                onClick={() => setShowFollowerModal(true)}
+                            >
+                                <strong>{followers.length}</strong> 팔로워
+                            </Typography>
+                            <Typography
+                                variant="body2"
+                                sx={{ cursor: 'pointer', textDecoration: 'underline' }}
+                                onClick={() => setShowFollowingModal(true)}
+                            >
+                                <strong>{following.length}</strong> 팔로우
+                            </Typography>
                         </Box>
 
                         {otherUserId !== my.userId && (
@@ -144,7 +176,7 @@ function OtherPage() {
                                 color="primary"
                                 onClick={handleFollowToggle}
                                 sx={{ mt: 2 }}
-                                disabled={followRequestStatus === 'PENDING'} // 요청 중일 경우 버튼 비활성화
+                                disabled={followRequestStatus === 'PENDING'}
                             >
                                 {followRequestStatus === 'PENDING' ? "요청중" : isFollowing ? "언팔로우" : "팔로우"}
                             </Button>
@@ -174,6 +206,52 @@ function OtherPage() {
                         <Typography variant="body2">게시물이 없습니다.</Typography>
                     )}
                 </Grid>
+
+                {/* 팔로워 모달 */}
+                <Dialog open={showFollowerModal} onClose={() => setShowFollowerModal(false)} maxWidth="xs" fullWidth>
+                    <DialogTitle>팔로워</DialogTitle>
+                    <DialogContent dividers>
+                        {followers.length === 0 ? (
+                            <Typography>팔로워가 없습니다.</Typography>
+                        ) : (
+                            followers.map((follower) => (
+                                <Box key={follower.USERID} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                    <Avatar src={follower.PROFILEIMG || "https://via.placeholder.com/40"} />
+                                    <Box sx={{ ml: 2 }}>
+                                        <Typography variant="subtitle2">@{follower.USERID}</Typography>
+                                        <Typography variant="body2">{follower.USERNAME}</Typography>
+                                    </Box>
+                                </Box>
+                            ))
+                        )}
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setShowFollowerModal(false)}>닫기</Button>
+                    </DialogActions>
+                </Dialog>
+
+                {/* 팔로잉 모달 */}
+                <Dialog open={showFollowingModal} onClose={() => setShowFollowingModal(false)} maxWidth="xs" fullWidth>
+                    <DialogTitle>팔로우</DialogTitle>
+                    <DialogContent dividers>
+                        {following.length === 0 ? (
+                            <Typography>팔로우 중인 사용자가 없습니다.</Typography>
+                        ) : (
+                            following.map((follow) => (
+                                <Box key={follow.USERID} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                    <Avatar src={follow.PROFILEIMG || "https://via.placeholder.com/40"} />
+                                    <Box sx={{ ml: 2 }}>
+                                        <Typography variant="subtitle2">@{follow.USERID}</Typography>
+                                        <Typography variant="body2">{follow.USERNAME}</Typography>
+                                    </Box>
+                                </Box>
+                            ))
+                        )}
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setShowFollowingModal(false)}>닫기</Button>
+                    </DialogActions>
+                </Dialog>
 
                 <FeedModal open={modalOpen} onClose={handleCloseModal} />
 
