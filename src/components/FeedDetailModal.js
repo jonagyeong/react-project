@@ -85,7 +85,7 @@ function FeedDetailModal({
     };
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth='md' fullWidth={true} sx={{zIndex: 1400}}>
+        <Dialog open={open} onClose={onClose} maxWidth='md' fullWidth={true}>
             {selectedFeed ? (
                 <>
                     <DialogTitle>

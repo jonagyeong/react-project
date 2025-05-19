@@ -55,7 +55,7 @@ function FriendRecommendations({ user }) {
         boxShadow: "0 4px 12px rgb(0 0 0 / 0.15)",
         borderRadius: 3,
         p: 2,
-        zIndex: 1301,
+        zIndex: 1200,
         maxHeight: "70vh",
         overflowY: "auto",
         fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",

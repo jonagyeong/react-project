@@ -28,9 +28,7 @@ const style = {
     bgcolor: 'white',
     borderRadius: '12px',
     boxShadow: 24,
-    zIndex: 1300,
     p: 0,
-    overflow: 'hidden',
 };
 
 function FeedModal({ open, onClose, editMode, editingFeed }) {
@@ -145,7 +143,7 @@ function FeedModal({ open, onClose, editMode, editingFeed }) {
     };
 
     return (
-        <Modal open={open} onClose={onClose} sx={{zIndex:1500}}>
+        <Modal open={open} onClose={onClose} disableEnforceFocus >
             <Box sx={style}>
                 <Box display="flex" height="100%">
                     <IconButton
@@ -229,11 +227,19 @@ function FeedModal({ open, onClose, editMode, editingFeed }) {
                             <Select
                                 value={visible_scope}
                                 onChange={(e) => setVisibleScope(e.target.value)}
+                                MenuProps={{
+                                    PaperProps: {
+                                        sx: {
+                                            zIndex: 2100, // 이게 없으면 Portal 안에서도 가려질 수 있음
+                                        },
+                                    },
+                                }}
                             >
                                 <MenuItem value="ALL">전체</MenuItem>
                                 <MenuItem value="FRIEND">친한 친구만</MenuItem>
                             </Select>
                         </FormControl>
+
 
                         <Box display="flex" alignItems="center" mb={2}>
                             <input

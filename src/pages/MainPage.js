@@ -390,6 +390,18 @@ function MainPage() {
                 )}
             </Box>
 
+            <FeedModal
+                open={modalOpen}
+                onClose={() => {
+                    setModalOpen(false);
+                    setEditMode(false);
+                    setEditingFeed(null);
+                }}
+                fnFeedList={fnFeedList}
+                editMode={editMode}
+                editingFeed={editingFeed}
+            />
+
             {user && (
                 <Box
                     sx={{
@@ -399,7 +411,6 @@ function MainPage() {
                         display: "flex",
                         flexDirection: "column",
                         alignItems: "flex-end",
-                        zIndex: 1301
                     }}
                 >
                     <Box display="flex" alignItems="center" mb={2}>
@@ -420,18 +431,8 @@ function MainPage() {
                 </Box>
             )}
 
-            <FeedModal
-                open={modalOpen}
-                onClose={() => {
-                    setModalOpen(false);
-                    setEditMode(false);
-                    setEditingFeed(null);
-                }}
-                fnFeedList={fnFeedList}
-                editMode={editMode}
-                editingFeed={editingFeed}
-            />
-            <Dialog open={dialogOpen} sx={{zIndex:1550}}>
+
+            <Dialog open={dialogOpen} sx={{ zIndex: 1550 }}>
                 <DialogTitle>로그아웃 확인</DialogTitle>
                 <DialogContent>
                     <DialogContentText>정말 로그아웃하시겠습니까?</DialogContentText>
