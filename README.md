@@ -6,11 +6,15 @@ React를 활용하여 간단한 UI/UX를 사용하였고, CRUD로 기록할 수 
 2025년 5월 7일 ~ 2025년 5월 14일
 
 ## 💻 사용 언어 및 기술 스택
-- **Frontend**: React, JavaScript, HTML, CSS
-- **Backend**: Node.js, Express
-- **실시간 통신**: Socket.IO
-- **Database**: MySQL
-- **기타**: JWT, REST API
+
+| 구분 | 기술 스택 |
+|------|-----------|
+| Frontend | React, JavaScript, HTML, CSS |
+| Backend | Node.js, Express |
+| 실시간 통신 | Socket.IO |
+| Database | MySQL |
+| 기타 | JWT, REST API |
+
 
 ## 📱 화면 및 주요 기능
 1. 로그인 화면
