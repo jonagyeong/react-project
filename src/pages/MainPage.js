@@ -478,7 +478,7 @@ function MainPage() {
                             console.log("팔로우/팔로우 해제 클릭");
                             handleMenuClose();
                         }}>팔로우/팔로우 해제</Button>
-                        <Button fullWidth onClick={() => handleBlock(targetUserId)} style={{ color: "red" }}>차단</Button>
+                        <Button fullWidth onClick={() => handleBlock(menuFeed.USERID)} style={{ color: "red" }}>차단</Button>
                     </>
 
                     <Button fullWidth onClick={handleMenuClose} style={{ marginTop: '8px', color: 'gray' }}>

@@ -6,9 +6,12 @@ import {
     TextField,
     Switch,
     Checkbox,
-    FormControlLabel,
     Avatar,
-    IconButton,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { jwtDecode } from 'jwt-decode';
@@ -68,6 +71,11 @@ function SettingPage() {
     const [closeFriends, setCloseFriends] = useState(new Set());
     const [selectedSetting, setSelectedSetting] = useState('');
     const [modalOpen, setModalOpen] = useState(false);
+    const [blockedAccounts, setBlockedAccounts] = useState([]);
+    const [confirmUnblockOpen, setConfirmUnblockOpen] = useState(false);
+    const [userToUnblock, setUserToUnblock] = useState(null);
+
+
 
     // 프로필 정보 상태
     const [profile, setProfile] = useState({
@@ -188,8 +196,14 @@ function SettingPage() {
     }, []);
 
     useEffect(() => {
-        console.log("맞팔 목록:", mutuals);
-        console.log("친한 친구 목록(Set):", closeFriends);
+        if (user && user.userId && selectedSetting === "blockedAccounts") {
+            fetchBlockedAccounts();
+        }
+    }, [user, selectedSetting]);
+
+
+    useEffect(() => {
+
     }, [mutuals, closeFriends]);
 
     const handleSettingChange = (setting) => {
@@ -219,6 +233,52 @@ function SettingPage() {
             .catch(err => {
                 console.error("Error updating privacy:", err);
             });
+    };
+
+    // 차단 목록 불러오기
+    const fetchBlockedAccounts = () => {
+        fetch(`http://localhost:3005/block/list/${user.userId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    setBlockedAccounts(data.blockedList);
+                }
+            })
+            .catch(err => console.error("차단 목록 불러오기 실패", err));
+    };
+
+    // 차단 해제 함수
+    const unblockUser = (to_userid) => {
+        fetch("http://localhost:3005/block", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: user.userId, to_userid }),
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // 해제된 계정 목록에서 제거
+                    setBlockedAccounts(blockedAccounts.filter(id => id !== to_userid));
+                    handleCloseConfirmUnblock();
+                } else {
+                    alert("차단 해제에 실패했습니다.");
+                }
+            })
+            .catch(err => {
+                console.error("차단 해제 실패", err);
+            });
+    };
+
+    // 팝업 열기 함수 (차단 해제 버튼 클릭 시)
+    const handleOpenConfirmUnblock = (userId) => {
+        setUserToUnblock(userId);
+        setConfirmUnblockOpen(true);
+    };
+
+    // 팝업 닫기 함수
+    const handleCloseConfirmUnblock = () => {
+        setConfirmUnblockOpen(false);
+        setUserToUnblock(null);
     };
 
     const handleDeleteAccount = () => {
@@ -452,9 +512,45 @@ function SettingPage() {
                 {selectedSetting === "blockedAccounts" && (
                     <>
                         <Typography variant="h6" gutterBottom>차단된 계정</Typography>
-                        <Typography variant="body2">차단된 계정 목록이 여기에 표시됩니다.</Typography>
+                        {blockedAccounts.length === 0 ? (
+                            <Typography variant="body2">차단된 계정이 없습니다.</Typography>
+                        ) : (
+                            blockedAccounts.map((blockedUserId) => (
+                                <Box key={blockedUserId} display="flex" alignItems="center" mb={1}>
+                                    <Typography sx={{ flex: 1 }}>{blockedUserId}</Typography>
+                                    <Button variant="outlined" size="small" onClick={() => handleOpenConfirmUnblock(blockedUserId)}>
+                                        차단 해제
+                                    </Button>
+                                </Box>
+                            ))
+                        )}
                     </>
                 )}
+
+                <Dialog
+                    open={confirmUnblockOpen}
+                    onClose={handleCloseConfirmUnblock}
+                >
+                    <DialogTitle>차단 해제 확인</DialogTitle>
+                    <DialogContent>
+                        <DialogContentText>
+                            @{userToUnblock} 님의 차단을 해제하시겠습니까?
+                        </DialogContentText>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={handleCloseConfirmUnblock} color="primary">
+                            취소
+                        </Button>
+                        <Button
+                            onClick={() => unblockUser(userToUnblock)}
+                            color="primary"
+                            variant="contained"
+                            autoFocus
+                        >
+                            확인
+                        </Button>
+                    </DialogActions>
+                </Dialog>
 
                 {selectedSetting === "deleteAccount" && (
                     <>
