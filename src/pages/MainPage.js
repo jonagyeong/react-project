@@ -431,7 +431,7 @@ function MainPage() {
                 editMode={editMode}
                 editingFeed={editingFeed}
             />
-            <Dialog open={dialogOpen}>
+            <Dialog open={dialogOpen} sx={{zIndex:1550}}>
                 <DialogTitle>로그아웃 확인</DialogTitle>
                 <DialogContent>
                     <DialogContentText>정말 로그아웃하시겠습니까?</DialogContentText>

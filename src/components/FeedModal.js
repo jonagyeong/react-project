@@ -145,7 +145,7 @@ function FeedModal({ open, onClose, editMode, editingFeed }) {
     };
 
     return (
-        <Modal open={open} onClose={onClose}>
+        <Modal open={open} onClose={onClose} sx={{zIndex:1500}}>
             <Box sx={style}>
                 <Box display="flex" height="100%">
                     <IconButton

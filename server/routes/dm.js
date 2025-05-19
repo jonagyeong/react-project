@@ -11,7 +11,7 @@ router.get('/rooms/:userId', async (req, res) => {
     let { userId } = req.params;
     try {
         let query = "SELECT R.ROOM_ID, R.CREATED_AT, "
-            + " U.USERNAME, P.PROFILIMG, D.MESSAGE AS LAST_MESSAGE, D.REGDATE AS LAST_MESSAGE_TIME, D.READFLG, U.USERID "
+            + " U.USERNAME, P.PROFILEIMG, D.MESSAGE AS LAST_MESSAGE, D.REGDATE AS LAST_MESSAGE_TIME, D.READFLG, U.USERID "
             + " FROM DM_ROOM R "
             + " INNER JOIN DM_MEMBER M1 ON R.ROOM_ID = M1.ROOM_ID "
             + " INNER JOIN DM_MEMBER M2 ON R.ROOM_ID = M2.ROOM_ID AND M2.USERID != ? "
