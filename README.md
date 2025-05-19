@@ -20,7 +20,10 @@ React를 활용하여 간단한 UI/UX를 사용하였고, CRUD로 기록할 수 
 1. 로그인 화면
 
 ![로그인화면](https://github.com/user-attachments/assets/b16262a4-5c90-4022-a714-1a324c26a83c)
-- 회원가입 기능
+-- 로그인기능
+
+![회원가입](https://github.com/user-attachments/assets/685b407a-c599-441a-bc71-0971ef99c166)
+-- 동일한 아이디나 이메일로는 가입 불가
   
 ![비밀번호 찾기 및 재설정](https://github.com/user-attachments/assets/f02458ce-d00a-4030-814c-d11a04750b3a)
 - 계정 아이디로 비밀번호 찾기 후 비밀번호 변경 기능
