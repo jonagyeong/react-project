@@ -51,15 +51,6 @@ function Login() {
 
     return (
         <div className="login-container">
-            {/* 왼쪽 이미지 영역 */}
-            <div className="login-image-section">
-                <img
-                    src="/images/insta-sample.png"  // 예시 이미지 경로
-                    alt="이미지 위치"
-                    className="login-preview-image"
-                />
-            </div>
-            {/* 오른쪽 로그인 박스 */}
             <div className="login-form-section">
                 <div className="login-box">
                     <h3 className="login-title">로그인</h3>
