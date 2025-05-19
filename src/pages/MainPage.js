@@ -229,6 +229,7 @@ function MainPage() {
             userId: user.userId,
             to_userid: targetUserId
         };
+        console.log(blockData)
 
         fetch("http://localhost:3005/block", {
             method: "POST",
@@ -390,17 +391,7 @@ function MainPage() {
                 )}
             </Box>
 
-            <FeedModal
-                open={modalOpen}
-                onClose={() => {
-                    setModalOpen(false);
-                    setEditMode(false);
-                    setEditingFeed(null);
-                }}
-                fnFeedList={fnFeedList}
-                editMode={editMode}
-                editingFeed={editingFeed}
-            />
+
 
             {user && (
                 <Box
@@ -431,6 +422,17 @@ function MainPage() {
                 </Box>
             )}
 
+            <FeedModal
+                open={modalOpen}
+                onClose={() => {
+                    setModalOpen(false);
+                    setEditMode(false);
+                    setEditingFeed(null);
+                }}
+                fnFeedList={fnFeedList}
+                editMode={editMode}
+                editingFeed={editingFeed}
+            />
 
             <Dialog open={dialogOpen} sx={{ zIndex: 1550 }}>
                 <DialogTitle>로그아웃 확인</DialogTitle>
@@ -476,7 +478,7 @@ function MainPage() {
                             console.log("팔로우/팔로우 해제 클릭");
                             handleMenuClose();
                         }}>팔로우/팔로우 해제</Button>
-                        <Button fullWidth onClick={handleBlock} style={{ color: "red" }}>차단</Button>
+                        <Button fullWidth onClick={() => handleBlock(targetUserId)} style={{ color: "red" }}>차단</Button>
                     </>
 
                     <Button fullWidth onClick={handleMenuClose} style={{ marginTop: '8px', color: 'gray' }}>

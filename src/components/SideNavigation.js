@@ -23,7 +23,7 @@ import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import { useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 
-const SideNavigation = ({ handleOpenModal }) => {
+const SideNavigation = ({ handleOpenModal = () => { } }) => {
     const navigate = useNavigate();
     // 토큰 안전 디코딩 처리
     const token = localStorage.getItem("token");
