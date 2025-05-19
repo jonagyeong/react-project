@@ -5,6 +5,8 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { Carousel } from 'react-responsive-carousel';
+import "react-responsive-carousel/lib/styles/carousel.min.css";
+
 
 import FeedModal from './FeedModal';
 import { getTimeAgo } from './TimeAgo';
@@ -110,6 +112,11 @@ function FeedDetailModal({
                                                     src={imageUrl}
                                                     alt={`Feed Image ${index + 1}`}
                                                     onError={(e) => (e.target.src = "/default-image.png")}
+                                                    style={{
+                                                        maxHeight: "400px", // 원하는 최대 높이 설정
+                                                        width: "100%",       // 가로는 부모에 맞게
+                                                        objectFit: "contain" // 이미지 비율 유지하면서 잘림 없이
+                                                    }}
                                                 />
                                             </div>
                                         );
