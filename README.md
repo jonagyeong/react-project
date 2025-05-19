@@ -20,13 +20,17 @@ React를 활용하여 간단한 UI/UX를 사용하였고, CRUD로 기록할 수 
 1. 로그인 화면
 
 ![로그인화면](https://github.com/user-attachments/assets/b16262a4-5c90-4022-a714-1a324c26a83c)
--- 로그인기능
+- 로그인기능
+
 
 ![회원가입](https://github.com/user-attachments/assets/685b407a-c599-441a-bc71-0971ef99c166)
--- 동일한 아이디나 이메일로는 가입 불가
+- 동일한 아이디나 이메일로는 가입 불가
+
   
 ![비밀번호 찾기 및 재설정](https://github.com/user-attachments/assets/f02458ce-d00a-4030-814c-d11a04750b3a)
 - 계정 아이디로 비밀번호 찾기 후 비밀번호 변경 기능
+
+
 
 2. 메인화면
 
@@ -34,12 +38,16 @@ React를 활용하여 간단한 UI/UX를 사용하였고, CRUD로 기록할 수 
 - 사용자의 피드를 제외한 상대방의 피드 확인
 - 전체 / 친한 친구 버튼으로 사용자가 볼 수 있는 피드 필터링하기
 
+
 ![검색기능](https://github.com/user-attachments/assets/ade57b8c-b3af-4d00-b916-033c32499819)
 - 검색에서 자동완성 기능 및 최근 검색어
+
 
 ![피드 등록](https://github.com/user-attachments/assets/4510eed3-af33-4ef8-86b1-3ad3d65f2ffc)
 - 사용자의 계정으로 피드를 등록가능
 - 전체 보기 / 친한 친구 보기으로 선택 가능
+
+
 
 3. 내 프로필
 
@@ -47,10 +55,14 @@ React를 활용하여 간단한 UI/UX를 사용하였고, CRUD로 기록할 수 
 - 사용자가 작성한 피드들의 사진목록 보여주기
 - 사용자의 팔로워와 팔로우 계정 확인
 
+
+
 4. DM
 
 ![dm 메세지](https://github.com/user-attachments/assets/fbf97ca9-4940-465f-a806-b6a121b44ffa)
 - 상대 사용자와 실시간으로 메세지 보내기 가능
+
+
 
 5. 환경설정
 
