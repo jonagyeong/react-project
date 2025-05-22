@@ -92,9 +92,9 @@ CREATE TABLE IF NOT EXISTS `dm` (
   `REGDATE` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `ROOM_ID` int NOT NULL,
   PRIMARY KEY (`DM_ID`)
-) ENGINE=InnoDB AUTO_INCREMENT=105 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=106 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- 테이블 데이터 project.dm:~36 rows (대략적) 내보내기
+-- 테이블 데이터 project.dm:~37 rows (대략적) 내보내기
 INSERT INTO `dm` (`DM_ID`, `FROM_USERID`, `TO_USERID`, `MESSAGE`, `READFLG`, `REGDATE`, `ROOM_ID`) VALUES
 	(1, 'test', 'user1', '안녕 user1!', 'Y', '2025-05-14 03:51:13', 1),
 	(2, 'user1', 'test', '안녕 test!', 'Y', '2025-05-14 03:51:14', 1),
@@ -131,7 +131,8 @@ INSERT INTO `dm` (`DM_ID`, `FROM_USERID`, `TO_USERID`, `MESSAGE`, `READFLG`, `RE
 	(101, 'user1', 'test', '보내기', 'Y', '2025-05-15 09:28:18', 1),
 	(102, 'test', 'user1', '보내기', 'Y', '2025-05-15 09:28:22', 1),
 	(103, 'test', 'user1', '테스트', 'Y', '2025-05-15 09:37:12', 1),
-	(104, 'user1', 'test', '테스트', 'Y', '2025-05-15 09:37:15', 1);
+	(104, 'user1', 'test', '테스트', 'Y', '2025-05-15 09:37:15', 1),
+	(105, 'user2', 'test', 'dm 테스트', 'N', '2025-05-19 01:12:52', 2);
 
 -- 테이블 project.dm_img 구조 내보내기
 CREATE TABLE IF NOT EXISTS `dm_img` (
@@ -180,11 +181,10 @@ CREATE TABLE IF NOT EXISTS `feed` (
   `VISIBLE_SCOPE` varchar(20) DEFAULT 'ALL',
   `LOCATION` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`FEEDNO`)
-) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=52 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- 테이블 데이터 project.feed:~17 rows (대략적) 내보내기
+-- 테이블 데이터 project.feed:~18 rows (대략적) 내보내기
 INSERT INTO `feed` (`FEEDNO`, `USERID`, `CONTENT`, `REGDATE`, `VISIBLE_SCOPE`, `LOCATION`) VALUES
-	(26, 'user1', 'test', '2025-05-12 08:18:05', 'ALL', 'test'),
 	(27, 'user1', '친한 친구만', '2025-05-12 08:26:55', 'FRIEND', ''),
 	(28, 'user1', 'test', '2025-05-13 01:22:58', 'FRIEND', NULL),
 	(30, 'user1', '해시태그', '2025-05-13 01:35:30', 'FRIEND', NULL),
@@ -200,7 +200,9 @@ INSERT INTO `feed` (`FEEDNO`, `USERID`, `CONTENT`, `REGDATE`, `VISIBLE_SCOPE`, `
 	(46, 'user2', '설정페이지에서 작성(다시)', '2025-05-14 03:48:26', 'ALL', ''),
 	(47, 'user2', '환경설정 페이지에서 작성', '2025-05-14 03:48:45', 'ALL', ''),
 	(48, 'user1', '친한 친구', '2025-05-18 16:05:03', 'FRIEND', ''),
-	(49, 'user1', '전체', '2025-05-18 16:05:20', 'ALL', '');
+	(49, 'user1', '전체', '2025-05-18 16:05:20', 'ALL', ''),
+	(50, 'user2', '', '2025-05-19 01:06:09', 'ALL', ''),
+	(51, 'user1', '피드 올리기', '2025-05-19 03:26:54', 'FRIEND', '');
 
 -- 테이블 project.feed_bookmark 구조 내보내기
 CREATE TABLE IF NOT EXISTS `feed_bookmark` (
@@ -235,11 +237,10 @@ CREATE TABLE IF NOT EXISTS `feed_img` (
   `IMGPATH` varchar(255) DEFAULT NULL,
   `THUMBNAILYN` varchar(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   PRIMARY KEY (`FEED_IMGNO`)
-) ENGINE=InnoDB AUTO_INCREMENT=45 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- 테이블 데이터 project.feed_img:~21 rows (대략적) 내보내기
+-- 테이블 데이터 project.feed_img:~22 rows (대략적) 내보내기
 INSERT INTO `feed_img` (`FEED_IMGNO`, `FEEDNO`, `USERID`, `IMGNAME`, `IMGPATH`, `THUMBNAILYN`) VALUES
-	(19, 26, 'user1', '1747037885666-coding-926242_1920.jpg', 'feed/', 'Y'),
 	(20, 27, 'user1', '1747038415166-img.jpg', 'feed/', 'Y'),
 	(21, 28, 'user1', '1747099378592-img2.jpg', 'feed/', 'Y'),
 	(22, 29, 'user1', '1747100020483-wave.jpg', 'feed/', 'Y'),
@@ -259,7 +260,9 @@ INSERT INTO `feed_img` (`FEED_IMGNO`, `FEEDNO`, `USERID`, `IMGNAME`, `IMGPATH`, 
 	(41, 46, 'user2', '1747194506549-profil.png.png', 'feed/', 'Y'),
 	(42, 47, 'user2', '1747194525422-pasta-1181189_1920.jpg', 'feed/', 'Y'),
 	(43, 48, 'user1', '1747584303950-free-icon-salad-1610000.png', 'feed/', 'Y'),
-	(44, 49, 'user1', '1747584320089-free-icon-lunchbox-5305590.png', 'feed/', 'Y');
+	(44, 49, 'user1', '1747584320089-free-icon-lunchbox-5305590.png', 'feed/', 'Y'),
+	(45, 50, 'user2', '1747616769023-business-2717066_1920.jpg', 'feed/', 'Y'),
+	(46, 51, 'user1', '1747625214274-mountains-7586568.jpg', 'feed/', 'Y');
 
 -- 테이블 project.feed_like 구조 내보내기
 CREATE TABLE IF NOT EXISTS `feed_like` (
@@ -268,12 +271,14 @@ CREATE TABLE IF NOT EXISTS `feed_like` (
   `USERID` varchar(255) NOT NULL,
   `REGDATE` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`LIKE_ID`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- 테이블 데이터 project.feed_like:~2 rows (대략적) 내보내기
+-- 테이블 데이터 project.feed_like:~4 rows (대략적) 내보내기
 INSERT INTO `feed_like` (`LIKE_ID`, `FEEDNO`, `USERID`, `REGDATE`) VALUES
 	(2, 46, 'user1', '2025-05-18 15:33:58'),
-	(5, 47, 'user1', '2025-05-18 16:03:59');
+	(5, 47, 'user1', '2025-05-18 16:03:59'),
+	(6, 50, 'user1', '2025-05-19 01:07:12'),
+	(7, 51, 'user2', '2025-05-19 03:27:09');
 
 -- 테이블 project.feed_share 구조 내보내기
 CREATE TABLE IF NOT EXISTS `feed_share` (
@@ -324,7 +329,7 @@ CREATE TABLE IF NOT EXISTS `member` (
 -- 테이블 데이터 project.member:~11 rows (대략적) 내보내기
 INSERT INTO `member` (`USERID`, `EMAIL`, `PASSWORD`, `USERNAME`, `REGDATE`) VALUES
 	('test', 'test@test.com', '$2b$10$2r/CBVxkrjHg0WXIs9OEe.fUCyF0eL4DI.Dnv9Wfk9F.F9VxJ3zHm', '테스트', '2025-05-09 06:05:27'),
-	('user1', 'user1@user1.com', '$2b$10$1q8KDIAlq7hO64mQ5mwOWeDC.W/Nw.tyGFhJFXArx9NXlqYQVqoOi', '유저1', '2025-05-09 06:10:54'),
+	('user1', 'user1@user1.com', '$2b$10$hl1z.i6hYG.bY7wQ/or2Jeg3G77yQhs7R/GMFZnPSiHY7w2s.C8.O', '유저1', '2025-05-09 06:10:54'),
 	('user10', 'user10@user10.com', '$2b$10$dgumMCbe2BEUeTas1LXnp.esX7pvjraURS/oAiKoqMTz6FyLQvWGC', '유저10', '2025-05-14 07:55:58'),
 	('user2', 'user2@user2.com', '$2b$10$7dag3kHp9ygxEu3X8x5imOrkmVryZTARKzN45hOaZbmZS0jnyVFm.', '유저2', '2025-05-09 06:11:20'),
 	('user3', 'user3@user3.com', '$2b$10$pAQeOLmhJqI/bQl.Jbsyy.bA9vKMSGCYlDZiAFjdKufiHFQUy7uh2', '유저3', '2025-05-09 06:11:45'),
@@ -382,12 +387,13 @@ CREATE TABLE IF NOT EXISTS `report` (
   `REASON` text,
   `REGDATE` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`REPORT_ID`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- 테이블 데이터 project.report:~2 rows (대략적) 내보내기
+-- 테이블 데이터 project.report:~3 rows (대략적) 내보내기
 INSERT INTO `report` (`REPORT_ID`, `REPORT_TYPE`, `TARGET_ID`, `USERID`, `REASON`, `REGDATE`) VALUES
 	(1, 'FEED', 'user2', 'test', '부적절한 콘텐츠', '2025-05-14 06:10:23'),
-	(2, 'FEED', 'user2', 'test', '혐오 발언', '2025-05-14 06:20:57');
+	(2, 'FEED', 'user2', 'test', '혐오 발언', '2025-05-14 06:20:57'),
+	(3, 'FEED', 'user1', 'user2', '혐오 발언', '2025-05-19 03:27:18');
 
 -- 테이블 project.search_history 구조 내보내기
 CREATE TABLE IF NOT EXISTS `search_history` (

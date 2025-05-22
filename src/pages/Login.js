@@ -11,7 +11,7 @@ function Login() {
 
     const handleLogin = (e) => {
         e.preventDefault();
-        fetch("http://localhost:3005/member/login", {
+        fetch("http://52.78.184.181:3005/member/login", {
             method: "POST",
             headers: {
                 "Content-type": "application/json"
